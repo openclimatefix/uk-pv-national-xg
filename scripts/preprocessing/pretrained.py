@@ -66,7 +66,7 @@ class ProcessNWPPretrainedIterDataPipe(IterDataPipe):
         for nwp in self.source_datapipe:
             nwp = nwp.isel(step=self.step)  # select the horizon we want
             nwp.interp(
-                init_time_utc=self.interpolation_timepoints, method="cubic"
+                init_time_utc=self.interpolation_timepoints, method="linear"
             )  # interpolate to perscribed points
             for time, nwp_by_init_time in nwp.groupby("init_time_utc"):
                 # at each time point, pass the nwp data to pretrained model
@@ -97,6 +97,11 @@ if __name__ == "__main__":
         count = 0
         for tstamp, data in process_nwp_dpipe:
             results.append((tstamp, data))
+            count += 1
+            if count % 1_000:
+                print(f"Completed obs: {count}")
+            if count >= NUM_OBS:
+                break
 
         with open(
             f"/home/tom/local_data/pretrained_nwp_processing_step_{step}.pkl", "wb"
