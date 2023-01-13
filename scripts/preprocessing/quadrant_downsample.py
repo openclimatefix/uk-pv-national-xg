@@ -41,7 +41,7 @@ def main():
     gsp = xr.open_zarr(gsp_path)
     nwp = xr.open_zarr(nwp_path)
 
-    evalutation_timeseries = (
+    evaluation_timeseries = (
         gsp.coords["datetime_gmt"]
         .where(
             (gsp["datetime_gmt"] >= nwp.coords["init_time"].values[0])
@@ -53,7 +53,7 @@ def main():
 
     for fh in forecast_horizons:
         # could be multiprocessed, but I am running overnight anyway
-        X = build_basic_covariates(evalutation_timeseries, nwp, fh)
+        X = build_basic_covariates(evaluation_timeseries, nwp, fh)
         np.save(
             f"/home/tom/local_data/geospatial_dsample_processed_nwp_data_step_{fh}.npy",
             X,
