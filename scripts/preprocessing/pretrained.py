@@ -31,8 +31,28 @@ if __name__ == "__main__":
     )
 
     # init base NWP datapipe
+    gsp = xr.open_zarr(GSP_FPATH)
+    nwp = xr.open_zarr(NWP_FPATH)
+
+    BATCH_SIZE = 1_000
+
+    # get a common 30 minute interval timeseries for GSP
+    evaluation_timeseries = (
+        gsp.coords["datetime_gmt"]
+        .where(
+            (gsp["datetime_gmt"] >= nwp.coords["init_time"].values[0])
+            & (gsp["datetime_gmt"] <= nwp.coords["init_time"].values[-1]),
+            drop=True,
+        )
+        .values
+    )
+
+    # init base NWP datapipe
     base_nwp_dpipe = OpenNWPIterDataPipe(NWP_FPATH)
     model = resnet101(pretrained=True)
+
+    # for each forecast horizon, proprocess and save the data locally.
+    for step in range(NWP_STEP_HORIZON):
 
     # for each forecast horizon, proprocess and save the data locally.
     for step in range(NWP_STEP_HORIZON):
@@ -42,13 +62,19 @@ if __name__ == "__main__":
             step,
             batch_size=BATCH_SIZE,
             interpolate=False,  # cheaper to interpolate afterwards
+            step,
+            batch_size=BATCH_SIZE,
+            interpolate=False,  # cheaper to interpolate afterwards
         )
+
 
         results = []
         count = 0
         for tstamp, data in process_nwp_dpipe:
             results.append((tstamp, data))
             count += 1
+            if count >= ceil(len(nwp.init_time) / BATCH_SIZE):
+                # only run the preprocessing through one cycle of data
             if count >= ceil(len(nwp.init_time) / BATCH_SIZE):
                 # only run the preprocessing through one cycle of data
                 break
