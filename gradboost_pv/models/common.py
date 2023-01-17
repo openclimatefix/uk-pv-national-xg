@@ -5,6 +5,14 @@ import numpy.typing as npt
 from typing import Union, Tuple
 
 
+NWP_VARIABLE_NUM = 17
+NWP_STEP_HORIZON = 37
+NWP_FPATH = (
+    "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV_intermediate_version_3.zarr/"
+)
+GSP_FPATH = "gs://solar-pv-nowcasting-data/PV/GSP/v5/pv_gsp.zarr"
+
+
 ORDERED_NWP_FEATURE_VARIABLES = [
     "cdcb",
     "lcc",
@@ -80,7 +88,22 @@ def trigonometric_datetime_transformation(datetimes: npt.ArrayLike) -> np.ndarra
     )
 
 
-def linear_trend_estimation(data: pd.DataFrame, epsilon=0.01):
-    assert all(["x" in data.columns, "y" in data.columns])
-    _x, _y = data["x"], data["y"]
-    return max(min((1 / ((_x.T @ _x) + epsilon)) * (_x.T @ _y), 10), -10)
+def build_rolling_linear_regression_betas(
+    X: Union[pd.Series, pd.DataFrame],
+    y: Union[pd.Series, pd.DataFrame],
+    window_size: int = 10,
+    epsilon=0.01,
+) -> pd.Series:
+
+    assert len(X) == len(y)
+
+    betas = np.nan * np.empty(len(y))
+    for n in range(window_size, len(y)):
+        _x, _y = (
+            X.iloc[(n - window_size) : n].values,
+            y.iloc[(n - window_size) : n].values,
+        )
+        _beta = max(min((1 / ((_x.T @ _x) + epsilon)) * (_x.T @ _y), 10), -10)
+        betas[n] = _beta
+
+    return pd.Series(data=betas, index=y.index, name="LR_Beta")
