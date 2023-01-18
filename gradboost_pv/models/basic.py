@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import xarray as xr
-from typing import Iterable, Tuple
+from typing import Tuple
 
 from gradboost_pv.models.common import (
     trigonometric_datetime_transformation,
@@ -69,19 +69,3 @@ def build_datasets_from_local(
     X = X.loc[y.index]
 
     return X, y
-
-
-def preprocess_nwp_per_step(
-    evaluation_timepoints: Iterable[np.datetime64],
-    nwp: xr.Dataset,
-    forecast_horizon_step: int,
-) -> np.ndarray:
-    X = nwp.isel(step=forecast_horizon_step)
-    X = X.chunk({"init_time": 1, "variable": 1})
-    X = X.mean(dim=["x", "y"])
-    X = X.interp(init_time=evaluation_timepoints, method="cubic")
-
-    # compute the transformation - this can take some time
-    # approx 10 mins per call.
-    X = X.to_array().as_numpy().values
-    return X

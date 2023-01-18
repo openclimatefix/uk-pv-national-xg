@@ -14,6 +14,16 @@ ESO_GEO_JSON_URL = (
     "resource/08534dae-5408-4e31-8639-b579c8f1c50b/download/gsp_regions_20220314.geojson"
 )
 
+# processing takes quite a long time, so take a subset for now.
+DEFAULT_VARIABLES_FOR_PROCESSING = [
+    "dswrf",
+    "hcct",
+    "lcc",
+    "t",
+    "sde",
+    "wdir10",
+]
+
 
 def get_eso_uk_multipolygon() -> MultiPolygon:
     with requests.get(ESO_GEO_JSON_URL) as response:

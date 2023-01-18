@@ -1,45 +1,39 @@
-from typing import Iterable
+from argparse import ArgumentParser
 import numpy as np
 import xarray as xr
 
-
-nwp_path = (
-    "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV_intermediate_version_3.zarr/"
-)
-gsp_path = "gs://solar-pv-nowcasting-data/PV/GSP/v5/pv_gsp.zarr"
-forecast_horizons = range(15, 36)
-
-DOWNSAMPLE_TO_NUM_POINTS = 2
+from gradboost_pv.models.common import GSP_FPATH, NWP_FPATH, NWP_STEP_HORIZON
+from gradboost_pv.preprocessing.quadrant_downsample import preprocess_nwp_per_step
+from gradboost_pv.utils.logger import getLogger
 
 
-def build_basic_covariates(
-    eval_timepoints: Iterable[np.datetime64], nwp_data: xr.Dataset, fh: int
-):
-    X = nwp_data.isel(step=fh)
-    X = X.chunk({"init_time": 1, "variable": 1})
-    X = X.coarsen(
-        dim={
-            "x": int(548 / DOWNSAMPLE_TO_NUM_POINTS),
-            "y": int(704 / DOWNSAMPLE_TO_NUM_POINTS),
-        },
-        boundary="exact",
-    ).mean()
-    X = X.interp(init_time=eval_timepoints, method="cubic")
+logger = getLogger("quadrant-process-nwp-data")
 
-    # compute the transformation - this can take some time
-    # around 10 mins per timestep
-    _X = X.to_array().as_numpy()
 
-    return _X
+def parse_args():
+    parser = ArgumentParser(
+        description="Script to bulk process NWP xarray data for later use in simple ML model."
+    )
+    parser.add_argument(
+        "--save_dir", type=str, required=True, help="Directory to save collated data."
+    )
+    args = parser.parse_args()
+    return args
+
+
+def _build_local_save_path(path_to_dir: str, forecast_horizon: int) -> str:
+    return f"{path_to_dir}/quadrant_nwp_processed_step_{forecast_horizon}.npy"
 
 
 def main():
     """
-    Temporary Script to preprocess NWP data (for overnight)
-    NOT PRODUCTION!!
+    Bulk process NWP data to  a 2x2 grid, taking quadrants.
     """
-    gsp = xr.open_zarr(gsp_path)
-    nwp = xr.open_zarr(nwp_path)
+
+    args = parse_args()
+
+    gsp = xr.open_zarr(GSP_FPATH)
+    nwp = xr.open_zarr(NWP_FPATH)
 
     evaluation_timeseries = (
         gsp.coords["datetime_gmt"]
@@ -51,14 +45,14 @@ def main():
         .values
     )
 
-    for fh in forecast_horizons:
+    for forecast_horizon in range(NWP_STEP_HORIZON):
         # could be multiprocessed, but I am running overnight anyway
-        X = build_basic_covariates(evaluation_timeseries, nwp, fh)
+        X = preprocess_nwp_per_step(evaluation_timeseries, nwp, forecast_horizon)
         np.save(
-            f"/home/tom/local_data/geospatial_dsample_processed_nwp_data_step_{fh}.npy",
+            _build_local_save_path(args.save_dir, forecast_horizon),
             X,
         )
-        print(f"Completed processing of data for step: {fh}")
+        logger.info(f"Completed processing of data for step: {forecast_horizon}")
 
 
 if __name__ == "__main__":

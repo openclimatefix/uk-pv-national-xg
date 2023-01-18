@@ -1,58 +1,49 @@
+from argparse import ArgumentParser
 import xarray as xr
 from torchvision.models import resnet101
 from ocf_datapipes.load.nwp.nwp import OpenNWPIterDataPipe
 import pandas as pd
 from math import ceil
 
-from gradboost_pv.models.pretrained import ProcessNWPPretrainedIterDataPipe
+from gradboost_pv.preprocessing.pretrained import ProcessNWPPretrainedIterDataPipe
 from gradboost_pv.models.common import (
     NWP_FPATH,
-    GSP_FPATH,
     NWP_STEP_HORIZON,
     NWP_VARIABLE_NUM,
 )
+from gradboost_pv.utils.logger import getLogger
 
 
-if __name__ == "__main__":
-    gsp = xr.open_zarr(GSP_FPATH)
-    nwp = xr.open_zarr(NWP_FPATH)
+logger = getLogger("pretrained-process-nwp-data")
 
-    BATCH_SIZE = 1_000
 
-    # get a common 30 minute interval timeseries for GSP
-    evaluation_timeseries = (
-        gsp.coords["datetime_gmt"]
-        .where(
-            (gsp["datetime_gmt"] >= nwp.coords["init_time"].values[0])
-            & (gsp["datetime_gmt"] <= nwp.coords["init_time"].values[-1]),
-            drop=True,
-        )
-        .values
+def parse_args():
+    parser = ArgumentParser(
+        description="Script to bulk process NWP xarray data for later use in simple ML model."
     )
+    parser.add_argument(
+        "--save_dir", type=str, required=True, help="Directory to save collated data."
+    )
+    args = parser.parse_args()
+    return args
+
+
+def _build_local_save_path(path_to_dir: str, forecast_horizon: int) -> str:
+    return f"{path_to_dir}/pretrained_nwp_processed_step_{forecast_horizon}.pkl"
+
+
+def main():
+    """Bulk Processing NWP data with a pretrained CNN, saving the output locally."""
+    args = parse_args()
 
     # init base NWP datapipe
-    gsp = xr.open_zarr(GSP_FPATH)
     nwp = xr.open_zarr(NWP_FPATH)
 
     BATCH_SIZE = 1_000
-
-    # get a common 30 minute interval timeseries for GSP
-    evaluation_timeseries = (
-        gsp.coords["datetime_gmt"]
-        .where(
-            (gsp["datetime_gmt"] >= nwp.coords["init_time"].values[0])
-            & (gsp["datetime_gmt"] <= nwp.coords["init_time"].values[-1]),
-            drop=True,
-        )
-        .values
-    )
 
     # init base NWP datapipe
     base_nwp_dpipe = OpenNWPIterDataPipe(NWP_FPATH)
     model = resnet101(pretrained=True)
-
-    # for each forecast horizon, proprocess and save the data locally.
-    for step in range(NWP_STEP_HORIZON):
 
     # for each forecast horizon, proprocess and save the data locally.
     for step in range(NWP_STEP_HORIZON):
@@ -62,19 +53,14 @@ if __name__ == "__main__":
             step,
             batch_size=BATCH_SIZE,
             interpolate=False,  # cheaper to interpolate afterwards
-            step,
-            batch_size=BATCH_SIZE,
-            interpolate=False,  # cheaper to interpolate afterwards
         )
-
 
         results = []
         count = 0
         for tstamp, data in process_nwp_dpipe:
             results.append((tstamp, data))
             count += 1
-            if count >= ceil(len(nwp.init_time) / BATCH_SIZE):
-                # only run the preprocessing through one cycle of data
+
             if count >= ceil(len(nwp.init_time) / BATCH_SIZE):
                 # only run the preprocessing through one cycle of data
                 break
@@ -103,8 +89,9 @@ if __name__ == "__main__":
             ]
         ).sort_index()
 
-        results.to_pickle(
-            f"/home/tom/local_data/pretrained_nwp_processing_step_{step}.pkl"
-        )
+        results.to_pickle(_build_local_save_path(args.save_dir, step))
+        logger.info(f"Complete Pretrained Proprocessing for step: {step}")
 
-        print(f"Complete Pretrained Proprocessing for step: {step}")
+
+if __name__ == "__main__":
+    main()

@@ -3,16 +3,16 @@ import xarray as xr
 from argparse import ArgumentParser
 
 from gradboost_pv.models.common import NWP_FPATH, GSP_FPATH, NWP_STEP_HORIZON
-from gradboost_pv.models.basic import preprocess_nwp_per_step
+from gradboost_pv.preprocessing.basic import preprocess_nwp_per_step
 from gradboost_pv.utils.logger import getLogger
 
 
-logger = getLogger("bulk-process-nwp-data")
+logger = getLogger("basic-process-nwp-data")
 
 
 def parse_args():
     parser = ArgumentParser(
-        description="Script to bulk process NWP xarray data for later use in simple ML model. Saves data locally."
+        description="Script to bulk process NWP xarray data for later use in simple ML model."
     )
     parser.add_argument(
         "--save_dir", type=str, required=True, help="Directory to save collated data."
@@ -22,7 +22,7 @@ def parse_args():
 
 
 def _build_local_save_path(path_to_dir: str, forecast_horizon: int) -> str:
-    return f"{path_to_dir}_{forecast_horizon}.npy"
+    return f"{path_to_dir}/basic_nwp_preprocessed_step_{forecast_horizon}.npy"
 
 
 def main():

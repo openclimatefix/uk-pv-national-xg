@@ -55,7 +55,9 @@ class ExperimentSummary:
 class EnhancedJSONEncoder(json.JSONEncoder):
     """
     Class for json dumping a dataclass object to file.
-    Stolen from: https://stackoverflow.com/questions/51286748/make-the-python-json-encoder-support-pythons-new-dataclasses
+    Stolen from:
+    https://stackoverflow.com/questions/51286748/
+    make-the-python-json-encoder-support-pythons-new-dataclasses
     """
 
     def default(self, o):

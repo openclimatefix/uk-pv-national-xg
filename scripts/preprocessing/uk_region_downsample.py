@@ -1,31 +1,51 @@
+from argparse import ArgumentParser
 import numpy as np
 import xarray as xr
 import itertools
+from typing import Tuple
 
-from gradboost_pv.preprocessing.geospatial import NWPUKRegionMaskedDatasetBuilder
-
-FORECAST_HORIZONS = range(37)
-VARIABLES = [
-    "dswrf",
-    "hcct",
-    "lcc",
-    "t",
-    "sde",
-    "wdir10",
-]
-
-NWP_PATH = (
-    "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV_intermediate_version_3.zarr/"
+from gradboost_pv.preprocessing.region_filtered import (
+    NWPUKRegionMaskedDatasetBuilder,
+    DEFAULT_VARIABLES_FOR_PROCESSING,
 )
-GSP_PATH = "gs://solar-pv-nowcasting-data/PV/GSP/v5/pv_gsp.zarr"
+from gradboost_pv.models.common import NWP_STEP_HORIZON, NWP_FPATH, GSP_FPATH
+from gradboost_pv.utils.logger import getLogger
+
+
+logger = getLogger("uk-region-filter-nwp-data")
+
+
+FORECAST_HORIZONS = range(NWP_STEP_HORIZON)
+
+
+def parse_args():
+    parser = ArgumentParser(
+        description="Script to bulk process NWP xarray data for later use in simple ML model."
+    )
+    parser.add_argument(
+        "--save_dir", type=str, required=True, help="Directory to save collated data."
+    )
+    args = parser.parse_args()
+    return args
+
+
+def _build_local_save_path(path_to_dir, forecast_horizon, variable) -> Tuple[str, str]:
+    return (
+        f"{path_to_dir}/uk_region_inner_variable_{variable}_step_{forecast_horizon}.npy",
+        f"{path_to_dir}/uk_region_outer_variable_{variable}_step_{forecast_horizon}.npy",
+    )
 
 
 def main():
     """
     Script to preprocess NWP data, overnight
     """
-    gsp = xr.open_zarr(GSP_PATH)
-    nwp = xr.open_zarr(NWP_PATH, chunks={"step": 1, "variable": 1, "init_time": 50})
+
+    args = parse_args()
+
+    gsp = xr.open_zarr(GSP_FPATH)
+    nwp = xr.open_zarr(NWP_FPATH)
+    nwp = nwp.chunk({"step": 1, "variable": 1, "init_time": 50})
 
     evaluation_timeseries = (
         gsp.coords["datetime_gmt"]
@@ -42,19 +62,20 @@ def main():
         evaluation_timeseries,
     )
 
-    iter_params = list(itertools.product(VARIABLES, FORECAST_HORIZONS))
+    iter_params = list(
+        itertools.product(DEFAULT_VARIABLES_FOR_PROCESSING, FORECAST_HORIZONS)
+    )
     for var, step in iter_params:
         uk_region, outer_region = dataset_builder.build_region_masked_covariates(
             var, step
         )
-        np.save(
-            f"/home/tom/local_data/uk_region_mean_var{var}_step{step}.npy", uk_region
-        )
-        np.save(
-            f"/home/tom/local_data/outer_region_mean_var{var}_step{step}.npy",
-            outer_region,
-        )
-        print(
+
+        inner_fpath, outer_fpath = _build_local_save_path(args.save_dir, step, var)
+
+        np.save(inner_fpath, uk_region)
+        np.save(outer_fpath, outer_region)
+
+        logger.info(
             f"Completed UK + Outer Region Feature Extraction for var: {var}, step: {step}"
         )
 
