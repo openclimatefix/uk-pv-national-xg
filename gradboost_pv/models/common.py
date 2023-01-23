@@ -43,6 +43,8 @@ TRIG_DATETIME_FEATURE_NAMES = [
     "COS_HOUR",
 ]
 
+DEFAULT_ROLLING_LR_WINDOW_SIZE = 10
+
 
 def _trig_transform(
     values: np.ndarray, period: Union[float, int]
@@ -88,11 +90,20 @@ def trigonometric_datetime_transformation(datetimes: npt.ArrayLike) -> np.ndarra
     )
 
 
+def clipped_univariate_linear_regression(
+    X: np.ndarray,
+    y: np.ndarray,
+    upper_clip: float = 10,
+    lower_clip: float = -10,
+    epsilon: float = 0.01,
+) -> float:
+    return max(min((1 / ((X.T @ X) + epsilon)) * (X.T @ y), upper_clip), lower_clip)
+
+
 def build_rolling_linear_regression_betas(
     X: Union[pd.Series, pd.DataFrame],
     y: Union[pd.Series, pd.DataFrame],
-    window_size: int = 10,
-    epsilon=0.01,
+    window_size: int = DEFAULT_ROLLING_LR_WINDOW_SIZE,
 ) -> pd.Series:
 
     assert len(X) == len(y)
@@ -103,7 +114,7 @@ def build_rolling_linear_regression_betas(
             X.iloc[(n - window_size) : n].values,
             y.iloc[(n - window_size) : n].values,
         )
-        _beta = max(min((1 / ((_x.T @ _x) + epsilon)) * (_x.T @ _y), 10), -10)
+        _beta = clipped_univariate_linear_regression(_x, _y)
         betas[n] = _beta
 
     return pd.Series(data=betas, index=y.index, name="LR_Beta")
