@@ -2,11 +2,9 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from typing import Tuple
+from ocf_datapipes.utils.utils import trigonometric_datetime_transformation
 
-from gradboost_pv.models.common import (
-    trigonometric_datetime_transformation,
-    TRIG_DATETIME_FEATURE_NAMES,
-)
+from gradboost_pv.models.utils import TRIG_DATETIME_FEATURE_NAMES
 
 
 def build_datasets_from_local(

@@ -2,7 +2,7 @@ import numpy as np
 import xarray as xr
 from argparse import ArgumentParser
 
-from gradboost_pv.models.common import NWP_FPATH, GSP_FPATH, NWP_STEP_HORIZON
+from gradboost_pv.models.utils import NWP_FPATH, GSP_FPATH, NWP_STEP_HORIZON
 from gradboost_pv.preprocessing.basic import preprocess_nwp_per_step
 from gradboost_pv.utils.logger import getLogger
 

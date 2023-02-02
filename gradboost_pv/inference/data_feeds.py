@@ -11,13 +11,17 @@ from torchdata.datapipes.iter import IterDataPipe
 class DataInput:
     nwp: xr.Dataset
     gsp: xr.Dataset
-    datetime_utc_at_read: np.datetime64
+    forecast_intitation_datetime_utc: np.datetime64
 
 
 @functional_datapipe("mock_datafeed")
 class MockDataFeed(IterDataPipe):
     def __init__(self, nwp_data: xr.Dataset, national_gsp_data: xr.Dataset) -> None:
-        self.data_feed = self.create_data_feed(nwp_data, national_gsp_data)
+        self.nwp = nwp_data
+        self.national_gsp_data = national_gsp_data
+
+    def initialise(self):
+        self.data_feed = self.create_data_feed(self.nwp, self.national_gsp_data)
 
     def create_data_feed(
         self,
@@ -66,11 +70,12 @@ class MockDataFeed(IterDataPipe):
                         np.datetime64(t, "ns"),
                     )
                 ),
-                datetime_utc_at_read=t,
+                forecast_intitation_datetime_utc=t,
             )
             for t in tseries
         ]
 
     def __iter__(self) -> Iterator[DataInput]:
+        assert self.data_feed is not None
         for datapoint in self.data_feed:
             yield datapoint

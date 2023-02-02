@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from typing import Optional, Union
 from pathlib import Path
 
+
 DEFFAULT_HYPARAM_CONFIG = {
     "objective": "reg:squarederror",
     "booster": "gbtree",

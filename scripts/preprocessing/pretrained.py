@@ -6,7 +6,7 @@ import pandas as pd
 from math import ceil
 
 from gradboost_pv.preprocessing.pretrained import ProcessNWPPretrainedIterDataPipe
-from gradboost_pv.models.common import (
+from gradboost_pv.models.utils import (
     NWP_FPATH,
     NWP_STEP_HORIZON,
     NWP_VARIABLE_NUM,

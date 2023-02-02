@@ -10,7 +10,7 @@ from gradboost_pv.preprocessing.region_filtered import (
     NWPUKRegionMaskedDatasetBuilder,
     DEFAULT_VARIABLES_FOR_PROCESSING,
 )
-from gradboost_pv.models.common import NWP_STEP_HORIZON, NWP_FPATH, GSP_FPATH
+from gradboost_pv.models.utils import NWP_STEP_HORIZON, NWP_FPATH, GSP_FPATH
 from gradboost_pv.utils.logger import getLogger
 
 

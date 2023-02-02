@@ -2,9 +2,9 @@ import numpy as np
 import xarray as xr
 import pandas as pd
 from typing import Tuple
+from ocf_datapipes.utils.utils import trigonometric_datetime_transformation
 
-from gradboost_pv.models.common import (
-    trigonometric_datetime_transformation,
+from gradboost_pv.models.utils import (
     TRIG_DATETIME_FEATURE_NAMES,
     build_rolling_linear_regression_betas,
 )

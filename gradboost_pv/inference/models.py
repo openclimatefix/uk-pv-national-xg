@@ -2,24 +2,19 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Dict
-import time
 
 import numpy as np
 import pandas as pd
 import xarray as xr
 from xgboost import XGBRegressor
+from ocf_datapipes.utils.utils import trigonometric_datetime_transformation
 
 from gradboost_pv.preprocessing.region_filtered import (
     get_eso_uk_multipolygon,
     generate_polygon_mask,
 )
-from gradboost_pv.models.common import (
-    trigonometric_datetime_transformation,
-    TRIG_DATETIME_FEATURE_NAMES,
-)
-
+from gradboost_pv.models.utils import TRIG_DATETIME_FEATURE_NAMES
 from gradboost_pv.utils.logger import getLogger
-
 from gradboost_pv.models.region_filtered import (
     build_solar_pv_features,
 )
@@ -123,6 +118,10 @@ class NationalPVModelConfig:
     # not overwriting allows for backfilling data with a mock data feed
     overwrite_read_datetime_at_inference: bool = True
 
+    # clip near 0 forecast values to 0
+    clip_near_zero_predictions: bool = True
+    clip_near_zero_value_kw: float = 50.0
+
 
 class BaseInferenceModel(ABC):
     """Abstract model for trained NationalUK PV Prediciton"""
@@ -155,12 +154,7 @@ class BaseInferenceModel(ABC):
 
 
 class NationalBoostInferenceModel(BaseInferenceModel):
-    """Model Object for NationalPV Forecast.
-
-    Based on region-masked NWP variables and solar information.
-
-    TODO - load mask locally
-    """
+    """Model Object for NationalPV Forecast."""
 
     def __init__(
         self,
@@ -313,7 +307,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
 
         forecast_times = pd.DatetimeIndex(
             [
-                data.datetime_utc_at_read + np.timedelta64(step, "h")
+                data.forecast_intitation_datetime_utc + np.timedelta64(step, "h")
                 for step in self._config.forecast_horizon_hours
             ]
         )
@@ -362,7 +356,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         )
 
         inference_time = (
-            data.datetime_utc_at_read
+            data.forecast_intitation_datetime_utc
             if not self._config.overwrite_read_datetime_at_inference
             else np.datetime64("now")
         )
@@ -410,7 +404,11 @@ class NationalBoostInferenceModel(BaseInferenceModel):
     ) -> Prediction:
 
         pv_amount = forecast * pv_capacity_mwp
-        pv_amount = pv_amount if pv_amount < 50 else 0
+
+        if self._config.clip_near_zero_predictions:
+            pv_amount = (
+                pv_amount if pv_amount > self._config.clip_near_zero_value_kw else 0.0
+            )
 
         return Prediction(
             inference_datetime,

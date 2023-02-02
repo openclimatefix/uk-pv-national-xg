@@ -2,23 +2,14 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from typing import Tuple
-from pvlib.location import Location
+from ocf_datapipes.utils.utils import trigonometric_datetime_transformation
 
-from gradboost_pv.models.common import (
-    trigonometric_datetime_transformation,
+from gradboost_pv.models.utils import (
     TRIG_DATETIME_FEATURE_NAMES,
+    build_lagged_features,
+    build_solar_pv_features,
 )
 from gradboost_pv.preprocessing.region_filtered import DEFAULT_VARIABLES_FOR_PROCESSING
-
-
-AUTO_REGRESSION_TARGET_LAG = np.timedelta64(1, "h")  # to avoid look ahead bias
-AUTO_REGRESSION_COVARIATE_LAG = AUTO_REGRESSION_TARGET_LAG + np.timedelta64(1, "h")
-
-LATITUDE_UK_SOUTH_CENTER = 52.80111
-LONGITUDE_UK_SOUTH_CENTER = -1.0967
-DEFAULT_UK_SOUTH_LOCATION = Location(
-    LATITUDE_UK_SOUTH_CENTER, LONGITUDE_UK_SOUTH_CENTER
-)
 
 
 def load_local_preprocessed_slice(
@@ -47,28 +38,6 @@ def load_all_variable_slices(
         )
     X = np.concatenate(X, axis=0).T
     return X
-
-
-def build_solar_pv_features(
-    times_of_forecast: pd.DatetimeIndex, location: Location = DEFAULT_UK_SOUTH_LOCATION
-) -> pd.DataFrame:
-    """Build PV/Solar features given times and a location.
-
-    Args:
-        times_of_forecast (pd.DatetimeIndex): times at which to compute solar data.
-        location (Location, optional): Location for computation.
-        Defaults to DEFAULT_UK_SOUTH_LOCATION.
-
-    Returns:
-        pd.DataFrame: A DataFrame with various solar position / clear sky features.
-        Indexed by forecast times
-    """
-    clear_sky = location.get_clearsky(times_of_forecast)[["ghi", "dni"]]
-    solar_position = location.get_solarposition(times_of_forecast)[
-        ["zenith", "elevation", "azimuth", "equation_of_time"]
-    ]
-    solar_variables = pd.concat([clear_sky, solar_position], axis=1)
-    return solar_variables
 
 
 def build_datasets_from_local(
@@ -119,30 +88,7 @@ def build_datasets_from_local(
     y = gsp.shift(freq=-forecast_horizon)
 
     # add lagged values of GSP PV
-    NUM_GSP_OBS_BETWEEN_FORECAST = int(forecast_horizon / np.timedelta64(30, "m"))
-
-    ar_day_lag = gsp.shift(
-        freq=np.timedelta64(int(24 - ((NUM_GSP_OBS_BETWEEN_FORECAST / 2) % 24)), "h")
-    )
-
-    ar_2_hour_lag = gsp.shift(
-        freq=np.timedelta64(
-            int(24 - ((NUM_GSP_OBS_BETWEEN_FORECAST / 2 - 2) % 24)), "h"
-        )
-    )
-
-    ar_1_hour_lag = gsp.shift(
-        freq=np.timedelta64(
-            int(24 - ((NUM_GSP_OBS_BETWEEN_FORECAST / 2 - 1) % 24)), "h"
-        )
-    )
-
-    pv_autoregressive_lags = (
-        pd.concat([ar_day_lag, ar_1_hour_lag, ar_2_hour_lag], axis=1)
-        .sort_index(ascending=False)
-        .dropna()
-    )
-    pv_autoregressive_lags.columns = ["PV_LAG_DAY", "PV_LAG_1HR", "PV_LAG_2HR"]
+    pv_autoregressive_lags = build_lagged_features(gsp, forecast_horizon)
 
     X = pd.concat(
         [
