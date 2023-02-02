@@ -8,7 +8,7 @@ from typing import Callable, Iterable, Optional, Tuple, Union, Iterator
 import datetime as dt
 from math import ceil, floor
 
-from gradboost_pv.models.common import NWP_VARIABLE_NUM
+from gradboost_pv.models.utils import NWP_VARIABLE_NUM
 
 AUTO_REGRESSION_TARGET_LAG = np.timedelta64(1, "h")  # to avoid look ahead bias
 AUTO_REGRESSION_COVARIATE_LAG = AUTO_REGRESSION_TARGET_LAG + np.timedelta64(1, "h")

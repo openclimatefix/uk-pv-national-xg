@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from typing import Optional, Union
 from pathlib import Path
 
+
 DEFFAULT_HYPARAM_CONFIG = {
     "objective": "reg:squarederror",
     "booster": "gbtree",
@@ -95,13 +96,23 @@ def run_experiment(
     if save_errors_locally:
         errors_test = pd.DataFrame(
             data=np.concatenate(
-                [test_mse.reshape(-1, 1), test_mae.reshape(-1, 1)], axis=1
+                [
+                    (y_test.values - y_pred_test.reshape(-1, 1)) ** 2,
+                    np.abs(y_test.values - y_pred_test.reshape(-1, 1)),
+                ],
+                axis=1,
             ),
             columns=["test_mse", "test_mae"],
             index=y_test.index,
         )
         errors_train = pd.DataFrame(
-            data=np.concatenate([train_mse, train_mae], axis=1),
+            data=np.concatenate(
+                [
+                    (y_train.values - y_pred_train.reshape(-1, 1)) ** 2,
+                    np.abs(y_train.values - y_pred_train.reshape(-1, 1)),
+                ],
+                axis=1,
+            ),
             columns=["train_mse", "train_mae"],
             index=y_train.index,
         )

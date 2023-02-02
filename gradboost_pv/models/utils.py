@@ -1,8 +1,17 @@
-from pandas.core.dtypes.common import is_datetime64_dtype
+from pathlib import Path
 import numpy as np
 import pandas as pd
-import numpy.typing as npt
 from typing import Union, Tuple
+from pvlib.location import Location
+
+
+NWP_VARIABLE_NUM = 17
+NWP_STEP_HORIZON = 37
+# GCP paths for nwp and gsp data
+NWP_FPATH = (
+    "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV_intermediate_version_3.zarr/"
+)
+GSP_FPATH = "gs://solar-pv-nowcasting-data/PV/GSP/v5/pv_gsp.zarr"
 
 
 ORDERED_NWP_FEATURE_VARIABLES = [
@@ -35,52 +44,122 @@ TRIG_DATETIME_FEATURE_NAMES = [
     "COS_HOUR",
 ]
 
+DEFAULT_ROLLING_LR_WINDOW_SIZE = 10
+LATITUDE_UK_SOUTH_CENTER = 52.80111
+LONGITUDE_UK_SOUTH_CENTER = -1.0967
+DEFAULT_UK_SOUTH_LOCATION = Location(
+    LATITUDE_UK_SOUTH_CENTER, LONGITUDE_UK_SOUTH_CENTER
+)
+PATH_TO_LOCAL_NWP_COORDINATES = (
+    Path(__file__).parents[2] / "data" / "nwp_grid_coordinates.npz"
+)
 
-def _trig_transform(
-    values: np.ndarray, period: Union[float, int]
+
+def save_nwp_coordinates(x: np.ndarray, y: np.ndarray):
+    np.savez(PATH_TO_LOCAL_NWP_COORDINATES, x=x, y=y)
+
+
+def load_nwp_coordinates(
+    path: Path = PATH_TO_LOCAL_NWP_COORDINATES,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Given a list of values and an upper limit on the values, compute trig decomposition.
+    coords = np.load(path)
+    return coords["x"], coords["y"]
+
+
+def clipped_univariate_linear_regression(
+    X: np.ndarray,
+    y: np.ndarray,
+    upper_clip: float = 10,
+    lower_clip: float = -10,
+    epsilon: float = 0.01,
+) -> float:
+    return max(min((1 / ((X.T @ X) + epsilon)) * (X.T @ y), upper_clip), lower_clip)
+
+
+def build_rolling_linear_regression_betas(
+    X: Union[pd.Series, pd.DataFrame],
+    y: Union[pd.Series, pd.DataFrame],
+    window_size: int = DEFAULT_ROLLING_LR_WINDOW_SIZE,
+) -> pd.Series:
+
+    assert len(X) == len(y)
+
+    betas = np.nan * np.empty(len(y))
+    for n in range(window_size, len(y)):
+        _x, _y = (
+            X.iloc[(n - window_size) : n].values,
+            y.iloc[(n - window_size) : n].values,
+        )
+        _beta = clipped_univariate_linear_regression(_x, _y)
+        betas[n] = _beta
+
+    return pd.Series(data=betas, index=y.index, name="LR_Beta")
+
+
+def build_solar_pv_features(
+    times_of_forecast: pd.DatetimeIndex, location: Location = DEFAULT_UK_SOUTH_LOCATION
+) -> pd.DataFrame:
+    """Build PV/Solar features given times and a location.
+
     Args:
-        values: ndarray of points in the range [0, period]
-        period: period of the data
+        times_of_forecast (pd.DatetimeIndex): times at which to compute solar data.
+        location (Location, optional): Location for computation.
+        Defaults to DEFAULT_UK_SOUTH_LOCATION.
+
     Returns:
-        Decomposition of values into sine and cosine of data with given period
+        pd.DataFrame: A DataFrame with various solar position / clear sky features.
+        Indexed by forecast times
     """
+    clear_sky = location.get_clearsky(times_of_forecast)[["ghi", "dni"]]
+    solar_position = location.get_solarposition(times_of_forecast)[
+        ["zenith", "elevation", "azimuth", "equation_of_time"]
+    ]
+    solar_variables = pd.concat([clear_sky, solar_position], axis=1)
+    return solar_variables
 
-    return np.sin(values * 2 * np.pi / period), np.cos(values * 2 * np.pi / period)
 
+def build_lagged_features(
+    gsp: pd.DataFrame, forecast_horizon: np.timedelta64
+) -> pd.DataFrame:
+    """Builds AR lagged features using the most recent day's information.
 
-def trigonometric_datetime_transformation(datetimes: npt.ArrayLike) -> np.ndarray:
-    """
-    Given an iterable of datetimes, returns a trigonometric decomposition on hour, day and month
+    Builds 1HR, 2HR and 1DAY lagged features for the most recent data of the same
+    point in the day.
+    For example, if it is 1pm now and we forecast 5 hours ahead, the 1DAY lag is yesterday at 6pm.
+    If we forecast 36 hours ahead, the 1DAY lag is 1am today.
+
     Args:
-        datetimes: ArrayLike of datetime64 values
+        gsp (pd.DataFrame): national gsp data, indexed by time at 30 minute intervals
+        forecast_horizon (np.timedelta64): forecast amount
+
     Returns:
-        Trigonometric decomposition of datetime into hourly, daily and
-        monthly values.
+        pd.DataFrame: DataFrame with 1DAY, 1HR and 2HR lagged values
     """
-    assert is_datetime64_dtype(
-        datetimes
-    ), "Data for Trig Decomposition must be np.datetime64 type"
+    assert pd.infer_freq(gsp.index) == "-30T"
 
-    datetimes = pd.DatetimeIndex(datetimes)
-    hour = datetimes.hour.values.reshape(-1, 1) + (
-        datetimes.minute.values.reshape(-1, 1) / 60
-    )
-    day = datetimes.day.values.reshape(-1, 1)
-    month = datetimes.month.values.reshape(-1, 1)
+    NUM_GSP_OBS_BETWEEN_FORECAST = int(forecast_horizon / np.timedelta64(30, "m"))
 
-    sine_hour, cosine_hour = _trig_transform(hour, 24)
-    sine_day, cosine_day = _trig_transform(day, 366)
-    sine_month, cosine_month = _trig_transform(month, 12)
-
-    return np.concatenate(
-        [sine_month, cosine_month, sine_day, cosine_day, sine_hour, cosine_hour], axis=1
+    ar_day_lag = gsp.shift(
+        freq=np.timedelta64(int(24 - ((NUM_GSP_OBS_BETWEEN_FORECAST / 2) % 24)), "h")
     )
 
+    ar_2_hour_lag = gsp.shift(
+        freq=np.timedelta64(
+            int(24 - ((NUM_GSP_OBS_BETWEEN_FORECAST / 2 - 2) % 24)), "h"
+        )
+    )
 
-def linear_trend_estimation(data: pd.DataFrame, epsilon=0.01):
-    assert all(["x" in data.columns, "y" in data.columns])
-    _x, _y = data["x"], data["y"]
-    return max(min((1 / ((_x.T @ _x) + epsilon)) * (_x.T @ _y), 10), -10)
+    ar_1_hour_lag = gsp.shift(
+        freq=np.timedelta64(
+            int(24 - ((NUM_GSP_OBS_BETWEEN_FORECAST / 2 - 1) % 24)), "h"
+        )
+    )
+
+    pv_autoregressive_lags = (
+        pd.concat([ar_day_lag, ar_1_hour_lag, ar_2_hour_lag], axis=1)
+        .sort_index(ascending=False)
+        .dropna()
+    )
+    pv_autoregressive_lags.columns = ["PV_LAG_DAY", "PV_LAG_1HR", "PV_LAG_2HR"]
+
+    return pv_autoregressive_lags
