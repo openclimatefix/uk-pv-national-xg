@@ -47,10 +47,9 @@ def process_eso_uk_multipolygon(uk_shape: gpd.GeoDataFrame) -> MultiPolygon:
     Returns:
         MultiPolygon: Object representing the UK-region.
     """
+    concat_poly = unary_union(uk_shape["geometry"].values)
 
-    return MultiPolygon(
-        Polygon(p.exterior) for p in unary_union(uk_shape["geometry"].values)
-    )
+    return MultiPolygon(Polygon(p.exterior) for p in concat_poly.geoms)
 
 
 def generate_polygon_mask(
@@ -67,11 +66,7 @@ def generate_polygon_mask(
         np.ndarray: 2-D array where each (x_i, y_i) value signifies if the point (x_i, y_i) belong
         to the polygon.
     """
-    coords = list(
-        map(
-            lambda x: Point(x[0], x[1]), itertools.product(coordinates_x, coordinates_y)
-        )
-    )
+    coords = list(map(lambda x: Point(x[0], x[1]), itertools.product(coordinates_x, coordinates_y)))
 
     # create a mask for belonging to UK region or not
     mask = check_points_in_multipolygon_multiprocessed(coords, polygon)
@@ -82,9 +77,7 @@ def generate_polygon_mask(
     return mask
 
 
-def check_point_in_multipolygon(
-    point: Point, polygon: Union[MultiPolygon, Polygon]
-) -> bool:
+def check_point_in_multipolygon(point: Point, polygon: Union[MultiPolygon, Polygon]) -> bool:
     """Check if a point exists in a polygon
 
     Args:
@@ -120,9 +113,7 @@ def check_points_in_multipolygon_multiprocessed(
     return np.asarray(results)
 
 
-def _process_nwp(
-    nwp_slice: xr.Dataset, mask: xr.DataArray
-) -> Tuple[xr.Dataset, xr.Dataset]:
+def _process_nwp(nwp_slice: xr.Dataset, mask: xr.DataArray) -> Tuple[xr.Dataset, xr.Dataset]:
     """Processing logic for NWP region-based filtering and averaging.
 
     Args:
@@ -140,9 +131,7 @@ def _process_nwp(
 class NWPUKRegionMaskedDatasetBuilder:
     """Class for iteratively processing NWP data."""
 
-    def __init__(
-        self, nwp: xr.Dataset, evaluation_timepoints: pd.DatetimeIndex
-    ) -> None:
+    def __init__(self, nwp: xr.Dataset, evaluation_timepoints: pd.DatetimeIndex) -> None:
         """Initalise dataset builder.
 
         Args:
@@ -161,9 +150,7 @@ class NWPUKRegionMaskedDatasetBuilder:
         """
         uk_polygon = query_eso_geojson()
         uk_polygon = process_eso_uk_multipolygon(uk_polygon)
-        mask = generate_polygon_mask(
-            self.nwp.coords["x"], self.nwp.coords["y"], uk_polygon
-        )
+        mask = generate_polygon_mask(self.nwp.coords["x"], self.nwp.coords["y"], uk_polygon)
 
         # convert numpy array to xarray mask for a 1 variable, 1 step times series of (x,y) coords
         mask = xr.DataArray(
@@ -192,9 +179,7 @@ class NWPUKRegionMaskedDatasetBuilder:
 
         # interpolate both to the common GSP time points
         uk_region = (
-            uk_region.interp(init_time=self.eval_timepoints, method="linear")
-            .to_array()
-            .as_numpy()
+            uk_region.interp(init_time=self.eval_timepoints, method="linear").to_array().as_numpy()
         )
         outer_region = (
             outer_region.interp(init_time=self.eval_timepoints, method="linear")
