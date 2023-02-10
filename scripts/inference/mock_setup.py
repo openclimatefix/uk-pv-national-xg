@@ -1,3 +1,4 @@
+"""Script to simulate data read, model inference and prediction write"""
 from argparse import ArgumentParser
 from pathlib import Path
 from typing import Tuple
@@ -6,28 +7,23 @@ import numpy as np
 import xarray as xr
 from xgboost import XGBRegressor
 
-from gradboost_pv.models.utils import NWP_FPATH, GSP_FPATH
-from gradboost_pv.models.utils import load_nwp_coordinates
 from gradboost_pv.inference.data_feeds import MockDataFeed
-from gradboost_pv.inference.models import (
-    NationalBoostInferenceModel,
-    NationalPVModelConfig,
-    Hour,
-)
-from gradboost_pv.inference.run import (
-    MockDatabaseConnection,
-    NationalBoostModelInference,
-)
+from gradboost_pv.inference.models import Hour, NationalBoostInferenceModel, NationalPVModelConfig
+from gradboost_pv.inference.run import MockDatabaseConnection, NationalBoostModelInference
+from gradboost_pv.models.utils import GSP_FPATH, NWP_FPATH, load_nwp_coordinates
 
-MOCK_DATE_RANGE = slice(
-    np.datetime64("2020-08-02T00:00:00"), np.datetime64("2020-08-04T00:00:00")
-)
+MOCK_DATE_RANGE = slice(np.datetime64("2020-08-02T00:00:00"), np.datetime64("2020-08-04T00:00:00"))
 DEFAULT_PATH_TO_MOCK_DATABASE = (
-    Path(__file__).parents[2] / "data" / "mock_inference_database.p"
+    Path(__file__).parents[2] / "data" / "mock_inference_database.pickle"
 )
 
 
 def parse_args():
+    """Parse command line arguments.
+
+    Returns:
+        args: Returns arguments
+    """
     parser = ArgumentParser(
         description="Script to run mock inference of NationalPV model using data from GCP."
     )
@@ -42,6 +38,14 @@ def parse_args():
 
 
 def load_model_from_local(forecast_hour_ahead: Hour) -> XGBRegressor:
+    """TODO - Temporary Model Loader, given an hour (int) return the corresponding XGBoost model.
+
+    Args:
+        forecast_hour_ahead (Hour): Hour ahead you wish to forecast
+
+    Returns:
+        XGBRegressor: Forecast model
+    """
     _model = XGBRegressor()
     _model.load_model(
         f"/home/tom/dev/gradboost_pv/data/uk_region_model_step_{forecast_hour_ahead}.model"
@@ -50,10 +54,20 @@ def load_model_from_local(forecast_hour_ahead: Hour) -> XGBRegressor:
 
 
 def load_nwp() -> xr.Dataset:
+    """TODO - Load in NWP Data for use, remove GCP instances?
+
+    Returns:
+        xr.Dataset: NWP Dataset
+    """
     return xr.open_zarr(NWP_FPATH)
 
 
 def load_gsp() -> xr.Dataset:
+    """TODO - Load in National PV Data for use, remove GCP instances?
+
+    Returns:
+        xr.Dataset: National PV Dataset
+    """
     return xr.open_zarr(GSP_FPATH).sel(gsp_id=0)
 
 
@@ -62,10 +76,25 @@ def create_date_range_slice(
     gsp: xr.Dataset,
     datetime_range: slice = MOCK_DATE_RANGE,
 ) -> Tuple[xr.Dataset, xr.Dataset]:
+    """Helper function to slice nwp and gsp data on their respective time dimensions.
+
+    Args:
+        nwp (xr.Dataset): NWP data
+        gsp (xr.Dataset): GSP data
+        datetime_range (slice, optional): Defaults to MOCK_DATE_RANGE.
+
+    Returns:
+        Tuple[xr.Dataset, xr.Dataset]: Sliced data.
+    """
     return nwp.sel(init_time=datetime_range), gsp.sel(datetime_gmt=datetime_range)
 
 
 def main(path_to_database: Path):
+    """Run mock inference of a NationalBoost Model.
+
+    Args:
+        path_to_database (Path): Path for mock local database.
+    """
     # load data to feed into mock data feed
     nwp, gsp = load_nwp(), load_gsp()
     nwp, gsp = create_date_range_slice(nwp, gsp)
@@ -75,12 +104,8 @@ def main(path_to_database: Path):
 
     # load in our national pv model
     x, y = load_nwp_coordinates()
-    config = NationalPVModelConfig(
-        "mock_inference", overwrite_read_datetime_at_inference=False
-    )
-    model = NationalBoostInferenceModel(
-        config, load_model_from_local, nwp.coords["x"].values, nwp.coords["y"].values
-    )
+    config = NationalPVModelConfig("mock_inference", overwrite_read_datetime_at_inference=False)
+    model = NationalBoostInferenceModel(config, load_model_from_local, x, y)
     model.initialise()
 
     # create a mock database to write to

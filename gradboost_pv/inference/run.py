@@ -1,3 +1,4 @@
+"""Model inference pipeline"""
 from pathlib import Path
 from typing import Dict
 
@@ -5,12 +6,20 @@ import pandas as pd
 from torchdata.datapipes import functional_datapipe
 from torchdata.datapipes.iter import IterDataPipe
 
-from gradboost_pv.inference.models import Prediction, NationalBoostInferenceModel
+from gradboost_pv.inference.models import NationalBoostInferenceModel, Prediction
 from gradboost_pv.utils.logger import getLogger
 from gradboost_pv.utils.typing import Hour
 
 
 def process_predictions_to_pandas(predictions: Dict[Hour, Prediction]) -> pd.DataFrame:
+    """Method that translates the prediction object of our models into a DataFrame
+
+    Args:
+        predictions (Dict[Hour, Prediction]): Output of model, predictions at each hourly horizon.
+
+    Returns:
+        pd.DataFrame: DataFrame of the forecasts, for ease of injection into database.
+    """
     return pd.concat(
         {
             hour: pd.DataFrame.from_dict(
@@ -30,6 +39,12 @@ class MockDatabase:
     """Draft Database for prototyping, storing results in a pandas DataFrame."""
 
     def __init__(self, path_to_database: Path, overwrite_current: bool = True) -> None:
+        """Setup for mock database
+
+        Args:
+            path_to_database (Path): Path to write local database to
+            overwrite_current (bool, optional): Defaults to True.
+        """
         self.path_to_database = path_to_database
         self.overwrite = overwrite_current
 
@@ -37,6 +52,11 @@ class MockDatabase:
         self.logger = getLogger("mock_database")
 
     def create_new_database(self) -> pd.DataFrame:
+        """Creates a mock database
+
+        Returns:
+            pd.DataFrame: mock db
+        """
         return pd.DataFrame(
             columns=[
                 "datetime_of_target_utc",
@@ -45,6 +65,7 @@ class MockDatabase:
         )
 
     def load(self) -> None:
+        """Loads mock database from file or creates a new one."""
         if self.overwrite:
             self.data = self.create_new_database()
         else:
@@ -55,6 +76,11 @@ class MockDatabase:
                 self.data = self.create_new_database()
 
     def write(self, predictions: Dict[Hour, Prediction]) -> None:
+        """Writes to mock database
+
+        Args:
+            predictions (Dict[Hour, Prediction]): output of NationalBoost model.
+        """
         assert self.data is not None
 
         self.data = pd.concat(
@@ -62,19 +88,24 @@ class MockDatabase:
         )
 
     def disconnect(self):
+        """Save mock database locally"""
         assert self.data is not None
 
         self.data.to_pickle(self.path_to_database)
 
 
 class MockDatabaseConnection:
-    """Class for running draft model inference, connecting to a local mock
-    database.
-    """
+    """Class for creating connection to mock local database"""
 
     def __init__(
         self, path_to_mock_database: Path, overwrite_database: bool = False
     ) -> None:
+        """Pre-connection setup to local mock database
+
+        Args:
+            path_to_mock_database (Path): path to database
+            overwrite_database (bool, optional): Defaults to False.
+        """
         self.path_to_database = path_to_mock_database
         self.overwrite_database = overwrite_database
         self.logger = getLogger("mock_database_connection")
@@ -83,12 +114,14 @@ class MockDatabaseConnection:
         self.database = None
 
     def connect(self):
+        """Creates connection to mock database"""
         self.database = MockDatabase(self.path_to_database, self.overwrite_database)
         self.database.load()
         self.connected = True
         self.logger.debug("Initialised connection to database")
 
     def disconnect(self):
+        """Disconnects from mock database, saving locally"""
         assert self.database is not None
         self.database.disconnect()
         self.database = None
@@ -96,6 +129,11 @@ class MockDatabaseConnection:
         self.logger.debug("Closed connection to database")
 
     def __enter__(self) -> MockDatabase:
+        """Context manager returning direct access to the database
+
+        Returns:
+            MockDatabase
+        """
         if not self.connected:
             self.connect()
 
@@ -103,23 +141,34 @@ class MockDatabaseConnection:
         return self.database
 
     def __exit__(self, type, value, traceback) -> None:
+        """Disconnect and save mock database upon exiting"""
         self.disconnect()
         return
 
 
 @functional_datapipe("nationalboost_model_inference")
 class NationalBoostModelInference(IterDataPipe):
+    """Simple model inference pipeline"""
+
     def __init__(
         self,
         model: NationalBoostInferenceModel,
         data_feed: IterDataPipe,
-        prediction_sink: MockDatabaseConnection,
+        database_connection: MockDatabaseConnection,
     ) -> None:
+        """Initalization of model pipeline.
+
+        Args:
+            model (NationalBoostInferenceModel): Model
+            data_feed (IterDataPipe): Data feed
+            database_connection (MockDatabaseConnection): conn to database
+        """
         self.model = model
         self.data_feed = data_feed
-        self.database_connection = prediction_sink
+        self.database_connection = database_connection
 
     def run(self):
+        """Runs the inference pipeline, exhausting all data in the datafeed."""
         with self.database_connection as conn:
             for data in self.data_feed:
                 prediction: Dict[Hour, Prediction] = self.model(data)

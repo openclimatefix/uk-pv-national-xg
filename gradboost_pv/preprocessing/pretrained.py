@@ -1,12 +1,13 @@
+"""Process NWP data with pretrained model"""
+from math import ceil, floor
+from typing import Callable, Iterable, Iterator, Optional, Tuple
+
 import numpy as np
+import pandas as pd
+import torch
 import xarray as xr
 from torchdata.datapipes import functional_datapipe
 from torchdata.datapipes.iter import IterDataPipe
-import torch
-import pandas as pd
-from typing import Callable, Iterable, Optional, Tuple, Union, Iterator
-import datetime as dt
-from math import ceil, floor
 
 from gradboost_pv.models.utils import NWP_VARIABLE_NUM
 
@@ -17,6 +18,8 @@ PRETRAINED_OUTPUT_DIMS = 1_000
 
 @functional_datapipe("process_nwp_pretrained")
 class ProcessNWPPretrainedIterDataPipe(IterDataPipe):
+    """Datapipe for applying pretrained CNN to NWP data."""
+
     def __init__(
         self,
         base_nwp_datapipe: IterDataPipe,
@@ -24,10 +27,20 @@ class ProcessNWPPretrainedIterDataPipe(IterDataPipe):
         step: int,
         batch_size: int = 50,
         interpolate: bool = False,
-        interpolation_timepoints: Optional[
-            Iterable[Union[dt.datetime, np.datetime64]]
-        ] = None,
+        interpolation_timepoints: Optional[Iterable[np.datetime64]] = None,
     ) -> None:
+        """Initialise NWP Datapipe
+
+        Args:
+            base_nwp_datapipe (IterDataPipe): Datapipe of NWP data
+            pretrained_model (Callable[[torch.Tensor], torch.Tensor]): CNN model
+            step (int): index of forecast horizon, for slicing
+            batch_size (int, optional): Defaults to 50.
+            interpolate (bool, optional): Whether to interpolate init_time on
+            interpolation_timepoints, defaults to False.
+            interpolation_timepoints (Optional[ Iterable[np.datetime64] ], optional): for init_time
+        """
+
         if interpolate:
             assert (
                 interpolation_timepoints is not None
@@ -40,6 +53,14 @@ class ProcessNWPPretrainedIterDataPipe(IterDataPipe):
         self.interpolation_timepoints = interpolation_timepoints
 
     def process_for_pretrained_input(self, nwp_batch: xr.DataArray) -> torch.Tensor:
+        """Convert NWP zarr data to torch tensors
+
+        Args:
+            nwp_batch (xr.DataArray): xarray data loaded from zarr.
+
+        Returns:
+            torch.Tensor: NWP as torch tensors for pretrained model
+        """
         nwp_batch = nwp_batch.to_numpy()
         n = nwp_batch.shape[0]  # batch size for all but the last batch
         nwp_batch = nwp_batch.reshape(NWP_VARIABLE_NUM * n, 64, 68)
@@ -50,6 +71,17 @@ class ProcessNWPPretrainedIterDataPipe(IterDataPipe):
         return nwp_batch
 
     def downsample_pretrained_output(self, model_output: torch.Tensor) -> np.ndarray:
+        """Downsample the output of the pretrained model.
+
+        e.g CNN gives 1_000 x batch_size output, we wish to simplify this further,
+        downsampling it further to 5 x batch_size.
+
+        Args:
+            model_output (torch.Tensor): output of pretrained model
+
+        Returns:
+            np.ndarray: downsampled output as np.array
+        """
         with torch.no_grad():
             output = torch.softmax(model_output, 1)
             output = np.split(output, range(200, PRETRAINED_OUTPUT_DIMS, 200), axis=1)
@@ -60,6 +92,11 @@ class ProcessNWPPretrainedIterDataPipe(IterDataPipe):
         return dsampled_output.numpy()
 
     def __iter__(self) -> Iterator[Tuple[pd.DatetimeIndex, np.ndarray]]:
+        """Iteratively: NWP data -> Pretrained CNN -> Downsampled output
+
+        Yields:
+            Iterator[Tuple[pd.DatetimeIndex, np.ndarray]]
+        """
         for nwp in self.source_datapipe:
             nwp = nwp.isel(step=self.step)  # select the horizon we want
             if self.interpolate:

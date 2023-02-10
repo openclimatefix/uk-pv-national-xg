@@ -1,3 +1,4 @@
+"""Models used for inference"""
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -6,21 +7,23 @@ from typing import Callable, Dict
 import numpy as np
 import pandas as pd
 import xarray as xr
-from xgboost import XGBRegressor
 from ocf_datapipes.utils.utils import trigonometric_datetime_transformation
+from xgboost import XGBRegressor
 
-from gradboost_pv.preprocessing.region_filtered import (
-    get_eso_uk_multipolygon,
-    generate_polygon_mask,
-)
-from gradboost_pv.models.utils import TRIG_DATETIME_FEATURE_NAMES
-from gradboost_pv.utils.logger import getLogger
-from gradboost_pv.models.region_filtered import (
+from gradboost_pv.inference.data_feeds import DataInput
+from gradboost_pv.models.utils import (
+    TRIG_DATETIME_FEATURE_NAMES,
+    build_lagged_features,
     build_solar_pv_features,
 )
-from gradboost_pv.preprocessing.region_filtered import DEFAULT_VARIABLES_FOR_PROCESSING
-from gradboost_pv.inference.data_feeds import DataInput
-
+from gradboost_pv.preprocessing.region_filtered import (
+    DEFAULT_VARIABLES_FOR_PROCESSING,
+    _process_nwp,
+    generate_polygon_mask,
+    process_eso_uk_multipolygon,
+    query_eso_geojson,
+)
+from gradboost_pv.utils.logger import getLogger
 
 DEFAULT_PATH_TO_UK_REGION_MASK = Path(__file__).parents[2] / "data/uk_region_mask.npy"
 DEFAULT_MODEL_COVARIATES = [
@@ -65,6 +68,8 @@ Hour = int
 
 @dataclass(frozen=True)
 class Covariates:
+    """Dataclass for storing processed data ready for model usage"""
+
     covariates: pd.DataFrame
     installed_capacity_mwp_at_inference_time: float
     inference_datetime_utc: np.datetime64
@@ -72,25 +77,32 @@ class Covariates:
 
 @dataclass(frozen=True)
 class Prediction:
+    """Wrapper for model output"""
+
     datetime_of_model_inference_utc: np.datetime64
     datetime_of_target_utc: np.datetime64
     forecast_kw: float
 
 
 def _load_default_nwp_variables() -> list[str]:
+    """Default factory for NWP variables used"""
     return DEFAULT_VARIABLES_FOR_PROCESSING
 
 
 def _load_default_forecast_horizons() -> list[Hour]:
+    """Default factory for hours forecasted"""
     return list(range(37))
 
 
 def _load_default_model_covariates() -> list[str]:
+    """Factory for expected model covariates"""
     return DEFAULT_MODEL_COVARIATES
 
 
 @dataclass
 class NationalPVModelConfig:
+    """Config class used to supply the inference model with setup information"""
+
     # used for logging
     name: str
 
@@ -118,43 +130,50 @@ class NationalPVModelConfig:
     # not overwriting allows for backfilling data with a mock data feed
     overwrite_read_datetime_at_inference: bool = True
 
-    # clip near 0 forecast values to 0
+    # clip near zero forecast values to zero
     clip_near_zero_predictions: bool = True
     clip_near_zero_value_kw: float = 50.0
 
 
 class BaseInferenceModel(ABC):
-    """Abstract model for trained NationalUK PV Prediciton"""
+    """Abstract Inference Model"""
 
     def __init__(self, config: NationalPVModelConfig) -> None:
+        """Abstract model for trained NationalUK PV Prediciton"""
         self._config = config
 
     @property
     def get_config(self):
+        """Return model configuration"""
         return self._config
 
     @abstractmethod
     def initialise(self):
+        """Perform any model initialisation steps needed"""
         pass
 
     @abstractmethod
     def covariate_transform(self, data) -> Covariates:
+        """Transform raw data from database into model features"""
         pass
 
     def predict(self, data):
+        """Call model prediction from raw database data."""
         X = self.covariate_transform(data)
         return self.predict_from_covariates(X)
 
     @abstractmethod
     def predict_from_covariates(self, covariates: Covariates) -> Dict[Hour, Prediction]:
+        """Call model prediction from generated features."""
         pass
 
     def __call__(self, data) -> Dict[Hour, Prediction]:
+        """Call model inference/prediction"""
         return self.predict(data)
 
 
 class NationalBoostInferenceModel(BaseInferenceModel):
-    """Model Object for NationalPV Forecast."""
+    """NationalBoost model based on uk-region masked NWP processing"""
 
     def __init__(
         self,
@@ -163,6 +182,8 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         nwp_x_coords: np.ndarray,
         nwp_y_coords: np.ndarray,
     ) -> None:
+        """Model Object for NationalPV Inference"""
+
         self.model_loader = model_loader
         self.nwp_x_coords = nwp_x_coords
         self.nwp_y_coords = nwp_y_coords
@@ -170,6 +191,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         self.logger = getLogger(self._config.name)
 
     def initialise(self):
+        """Load model and region mask"""
         self.logger.debug("Initialising model.")
         # load models for each time step from disk.
         self.meta_model = self.load_meta_model()
@@ -178,6 +200,11 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         self.mask = self.load_mask()
 
     def load_meta_model(self) -> Dict[Hour, XGBRegressor]:
+        """Loads model for each forecast horizon
+
+        Returns:
+            Dict[Hour, XGBRegressor]: dict of models indexed by forecast horizon
+        """
         return {
             forecast_horizon_hour: self.load_model_per_forecast_horizon(
                 forecast_horizon_hour
@@ -188,9 +215,18 @@ class NationalBoostInferenceModel(BaseInferenceModel):
     def load_model_per_forecast_horizon(
         self, forecast_horizon_hour: Hour
     ) -> XGBRegressor:
+        """Wrapper for model loading"""
         return self.model_loader(forecast_horizon_hour)
 
     def load_mask(self) -> xr.DataArray:
+        """Loads UK-region mask into memory.
+
+        First attempts to load from disk, otherwise downloads form
+        national grid.
+
+        Returns:
+            xr.DataArray: Mask of UK region on NWP coordinate grid.
+        """
         try:
             mask = np.load(self._config.path_to_uk_region_mask)
             self.logger.debug("Loaded region mask from local.")
@@ -198,7 +234,8 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         except FileNotFoundError:
             self.logger.info("Downloading region mask.")
             # couldn't find locally, download instead
-            uk_polygon = get_eso_uk_multipolygon()
+            uk_polygon = query_eso_geojson()
+            uk_polygon = process_eso_uk_multipolygon(uk_polygon)
             mask = generate_polygon_mask(
                 self.nwp_x_coords, self.nwp_y_coords, uk_polygon
             )
@@ -218,10 +255,12 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         return mask
 
     def check_incoming_data(self, data: DataInput) -> None:
-        """Runs some basic operations to check that we have received the
-        data required for our model to run.
+        """Basic data sanitation
 
-        This is a basic pass and not a definitive santitization of the data.
+        Runs some basic operations to check that we have received the
+        data required for our model to run.This is a basic pass and
+        not a definitive santitization of the data.
+
         Args:
             data (Dict[str, xr.Dataset]): nwp and gsp data from datafeed.
         """
@@ -263,31 +302,22 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         _nwp = data.nwp.sel(variable=self._config.nwp_variables)
         _nwp = _nwp.isel(step=self._config.forecast_horizon_hours)
 
-        nwp_inner = (
-            xr.where(~self.mask.isnull(), _nwp, np.nan)
-            .mean(dim=["x", "y"])
-            .to_array()
-            .values.reshape(len(_nwp.coords["variable"]), len(_nwp.coords["step"]))
-            .T
-        )
-
-        nwp_outer = (
-            xr.where(self.mask.isnull(), _nwp, np.nan)
-            .mean(dim=["x", "y"])
-            .to_array()
-            .values.reshape(len(_nwp.coords["variable"]), len(_nwp.coords["step"]))
-            .T
-        )
+        # use region-masked nwp processing
+        nwp_inner, nwp_outer = _process_nwp(_nwp, self.mask)
 
         # cast to pandas
         nwp_inner = pd.DataFrame(
-            data=nwp_inner,
+            data=nwp_inner.to_array()
+            .values.reshape(len(_nwp.coords["variable"]), len(_nwp.coords["step"]))
+            .T,
             index=self._config.forecast_horizon_hours,
             columns=[f"{var}_within" for var in _nwp.coords["variable"].values],
         )
 
         nwp_outer = pd.DataFrame(
-            data=nwp_outer,
+            data=nwp_outer.to_array()
+            .values.reshape(len(_nwp.coords["variable"]), len(_nwp.coords["step"]))
+            .T,
             index=self._config.forecast_horizon_hours,
             columns=[f"{var}_outer" for var in _nwp.coords["variable"].values],
         )
@@ -325,23 +355,14 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         solar_variables.index = self._config.forecast_horizon_hours
 
         pv_autoregressive_lags = list()
+
+        # build lagged features for each forecast horizon
         for step in self._config.forecast_horizon_hours:
-            lagged_data = pd.concat(
-                [
-                    gsp.shift(freq=np.timedelta64(24 - (step % 24), "h"))
-                    .loc[gsp.index[0]]
-                    .rename("PV_LAG_DAY"),
-                    gsp.shift(freq=np.timedelta64(24 - ((step - 2) % 24), "h"))
-                    .loc[gsp.index[0]]
-                    .rename("PV_LAG_2HR"),
-                    gsp.shift(freq=np.timedelta64(24 - ((step - 1) % 24), "h"))
-                    .loc[gsp.index[0]]
-                    .rename("PV_LAG_1HR"),
-                ],
-                axis=1,
-            )
-            lagged_data.index = [step]
-            pv_autoregressive_lags.append(lagged_data)
+            lags = build_lagged_features(gsp, np.timedelta64(step, "h")).loc[
+                [gsp.index.max()]
+            ]
+            lags.index = [step]
+            pv_autoregressive_lags.append(lags)
 
         pv_autoregressive_lags = pd.concat(pv_autoregressive_lags)
 
@@ -364,7 +385,6 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         # reorder covariates, XGBoost requires inference/training design matrix
         # to have the same order (it doesn't store column names internally)
         # see https://github.com/dmlc/xgboost/issues/636
-        # 1 entire day lost on this "feature" :-)
         cov = Covariates(
             covariates=X[self._config.required_model_covariates],
             installed_capacity_mwp_at_inference_time=data.gsp.sel(
@@ -375,6 +395,14 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         return cov
 
     def predict_from_covariates(self, covariates: Covariates) -> Dict[Hour, Prediction]:
+        """Run model on generated features.
+
+        Args:
+            covariates (Covariates): Features generates from various datasources
+
+        Returns:
+            Dict[Hour, Prediction]: Predictions for each forecast horizon
+        """
         X = covariates.covariates.loc[self._config.forecast_horizon_hours]
         predictions = {
             forecast_horizon_hour: self.meta_model[forecast_horizon_hour].predict(
@@ -402,6 +430,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         pv_capacity_mwp: float,
         inference_datetime: np.datetime64,
     ) -> Prediction:
+        """Sanitize model output into Prediction object"""
 
         pv_amount = forecast * pv_capacity_mwp
 

@@ -1,35 +1,38 @@
+"""Basic Model with single point downsampling"""
+from typing import Tuple
+
 import numpy as np
 import pandas as pd
 import xarray as xr
-from typing import Tuple
 from ocf_datapipes.utils.utils import trigonometric_datetime_transformation
 
-from gradboost_pv.models.utils import (
-    TRIG_DATETIME_FEATURE_NAMES,
-    ORDERED_NWP_FEATURE_VARIABLES,
-    build_lagged_features,
-)
+from gradboost_pv.models.utils import TRIG_DATETIME_FEATURE_NAMES, build_lagged_features
 
 
-def load_local_preprocessed_slice(forecast_horizon_step: int) -> np.ndarray:
-    return np.load(
-        f"/home/tom/local_data/basic_processed_nwp_data_step_{forecast_horizon_step}.npy"
+def load_local_preprocessed_slice(forecast_horizon_step: int) -> pd.DataFrame:
+    """TODO - remove"""
+    return pd.read_pickle(
+        f"/home/tom/local_data/basic_processed_nwp_data_step_{forecast_horizon_step}.pickle"
     )
 
 
 def build_datasets_from_local(
-    processed_nwp_slice: np.ndarray,
+    processed_nwp_slice: pd.DataFrame,
     national_gsp: xr.Dataset,
     forecast_horizon: np.timedelta64,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Generates features for region-masked model.
 
-    X = pd.DataFrame(
-        data=processed_nwp_slice.reshape(
-            processed_nwp_slice.shape[0], processed_nwp_slice.shape[1]
-        ).T,
-        columns=ORDERED_NWP_FEATURE_VARIABLES,
-        index=national_gsp.coords["datetime_gmt"].values,
-    ).sort_index(ascending=False)
+    Args:
+        processed_nwp_slice (pd.DataFrame): Processed NWP data performed at an earlier stage
+        national_gsp (xr.Dataset): National GSP PV data
+        forecast_horizon (np.timedelta64): forecast horizon for features
+
+    Returns:
+        Tuple[pd.DataFrame, pd.DataFrame]: X and y
+    """
+
+    X = processed_nwp_slice.sort_index(ascending=False)
 
     gsp = pd.DataFrame(
         national_gsp["generation_mw"] / national_gsp["installedcapacity_mwp"],

@@ -1,14 +1,15 @@
-from xgboost import XGBRegressor
-from sklearn.metrics import mean_squared_error, mean_absolute_error
+"""Functions for model training"""
 import dataclasses
 import json
-import numpy as np
 from dataclasses import dataclass
-import pandas as pd
-import matplotlib.pyplot as plt
-from typing import Optional, Union
 from pathlib import Path
+from typing import Optional, Union
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+from xgboost import XGBRegressor
 
 DEFFAULT_HYPARAM_CONFIG = {
     "objective": "reg:squarederror",
@@ -46,6 +47,8 @@ DEFFAULT_HYPARAM_CONFIG = {
 
 @dataclass
 class ExperimentSummary:
+    """Object for storing basic model train/test results"""
+
     mse_train_loss: float
     mse_test_loss: float
     mae_train_loss: float
@@ -56,12 +59,14 @@ class ExperimentSummary:
 class EnhancedJSONEncoder(json.JSONEncoder):
     """
     Class for json dumping a dataclass object to file.
+
     Stolen from:
     https://stackoverflow.com/questions/51286748/
     make-the-python-json-encoder-support-pythons-new-dataclasses
     """
 
     def default(self, o):
+        """Default encoding"""
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
         return super().default(o)
@@ -74,6 +79,19 @@ def run_experiment(
     save_errors_locally: bool = False,
     errors_local_save_file: Optional[Union[Path, str]] = None,
 ) -> ExperimentSummary:
+    """Trains and tests XGBoost Regression model.
+
+    Args:
+        X (pd.DataFrame): X - Features
+        y (pd.DataFrame): y - target, normalised PV data
+        booster_hyperparam_config (dict, optional): Model hyperparams,
+        defaults to DEFFAULT_HYPARAM_CONFIG.
+        save_errors_locally (bool, optional): Defaults to False.
+        errors_local_save_file (Optional[Union[Path, str]], optional): Defaults to None.
+
+    Returns:
+        ExperimentSummary: Object storing some basic fit/evalutation stats + model.
+    """
 
     if save_errors_locally:
         assert errors_local_save_file is not None
@@ -130,6 +148,7 @@ def run_experiment(
 
 
 def plot_loss_metrics(results_by_step: dict[int, ExperimentSummary]):
+    """Convenience function for plotting loss metrics over forecast horizons"""
     title_mapping = {
         "MAE Train": lambda x: x.mae_train_loss,
         "MAE Test": lambda x: x.mae_test_loss,
@@ -155,7 +174,7 @@ def plot_loss_metrics(results_by_step: dict[int, ExperimentSummary]):
 def plot_feature_importances(
     results_by_step: dict[int, ExperimentSummary], forecast_horizons=[1, 12, 24, 34]
 ):
-    assert len(forecast_horizons) == 4, "Plotting built for 4 forecast horizons!!"
+    """Convenience function for plotting feature importances over several forecast horizons"""
     fig, axes = plt.subplots(2, len(forecast_horizons), figsize=(28, 18))
 
     for param_idx, param in enumerate(["weight", "gain"]):

@@ -1,0 +1,13 @@
+{
+    "Conventions": "CF-1.7",
+    "GRIB_centre": "egrr",
+    "GRIB_centreDescription": "U.K. Met Office - Exeter",
+    "GRIB_edition": 2,
+    "GRIB_subCentre": 0,
+    "_ARRAY_DIMENSIONS": [
+        "y",
+        "x"
+    ],
+    "coordinates": "variable init_time step",
+    "institution": "U.K. Met Office - Exeter"
+}

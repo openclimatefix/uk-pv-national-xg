@@ -1,23 +1,25 @@
+"""Script for preprocessing NWP with pretrained CNN"""
 from argparse import ArgumentParser
-import xarray as xr
-from torchvision.models import resnet101
-from ocf_datapipes.load.nwp.nwp import OpenNWPIterDataPipe
-import pandas as pd
 from math import ceil
 
-from gradboost_pv.preprocessing.pretrained import ProcessNWPPretrainedIterDataPipe
-from gradboost_pv.models.utils import (
-    NWP_FPATH,
-    NWP_STEP_HORIZON,
-    NWP_VARIABLE_NUM,
-)
-from gradboost_pv.utils.logger import getLogger
+import pandas as pd
+import xarray as xr
+from ocf_datapipes.load.nwp.nwp import OpenNWPIterDataPipe
+from torchvision.models import resnet101
 
+from gradboost_pv.models.utils import NWP_FPATH, NWP_STEP_HORIZON, NWP_VARIABLE_NUM
+from gradboost_pv.preprocessing.pretrained import ProcessNWPPretrainedIterDataPipe
+from gradboost_pv.utils.logger import getLogger
 
 logger = getLogger("pretrained-process-nwp-data")
 
 
 def parse_args():
+    """Parse command line arguments.
+
+    Returns:
+        args: Returns arguments
+    """
     parser = ArgumentParser(
         description="Script to bulk process NWP xarray data for later use in simple ML model."
     )
@@ -29,7 +31,16 @@ def parse_args():
 
 
 def _build_local_save_path(path_to_dir: str, forecast_horizon: int) -> str:
-    return f"{path_to_dir}/pretrained_nwp_processed_step_{forecast_horizon}.pkl"
+    """Builds filepath based on the forecast horizon
+
+    Args:
+        path_to_dir (str): _description_
+        forecast_horizon (int): _description_
+
+    Returns:
+        str: Filepath
+    """
+    return f"{path_to_dir}/pretrained_nwp_processed_step_{forecast_horizon}.pickle"
 
 
 def main():

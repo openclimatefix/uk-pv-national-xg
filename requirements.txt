@@ -1,0 +1,15 @@
+numpy
+pandas
+xarray
+xgboost
+ocf_datapipes
+scikit-learn
+matplotlib
+geopandas
+pvlib
+shapely
+requests
+torchvision
+pytest
+flake8
+black
