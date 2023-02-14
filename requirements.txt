@@ -13,3 +13,4 @@ torchvision
 pytest
 flake8
 black
+boto3
