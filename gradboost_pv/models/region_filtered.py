@@ -60,9 +60,7 @@ def load_all_variable_slices(
         var_data = list()
         for year in years:
             var_data.append(
-                load_local_preprocessed_slice(
-                    path, variable, forecast_horizon_step, year
-                )
+                load_local_preprocessed_slice(path, variable, forecast_horizon_step, year)
             )
 
         X.append(pd.concat(var_data, axis=0).sort_index(ascending=False))
@@ -111,11 +109,7 @@ def build_datasets_from_local(
         gsp.index.shift(freq=forecast_horizon).sort_values(ascending=False).values
     )
     _X = pd.DataFrame(_X, index=gsp.index, columns=TRIG_DATETIME_FEATURE_NAMES)
-    X = (
-        pd.concat([processed_nwp_slice, X_diff, _X], axis=1)
-        .sort_index(ascending=False)
-        .dropna()
-    )
+    X = pd.concat([processed_nwp_slice, X_diff, _X], axis=1).sort_index(ascending=False).dropna()
 
     solar_variables = build_solar_pv_features(
         gsp.index.shift(freq=forecast_horizon).sort_values(ascending=False)
@@ -145,9 +139,7 @@ def build_datasets_from_local(
         # use random noise as a benchmark for uninformative features
         # used only in model analysis/benchmarking ONLY
 
-        noise = pd.DataFrame(
-            columns=["RANDOM_NOISE"], data=np.random.randn(len(X)), index=X.index
-        )
+        noise = pd.DataFrame(columns=["RANDOM_NOISE"], data=np.random.randn(len(X)), index=X.index)
 
         X = pd.concat([X, noise], axis=1)
 
