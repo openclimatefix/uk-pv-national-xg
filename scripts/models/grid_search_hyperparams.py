@@ -1,6 +1,7 @@
 """Script for Hyperparameter gridsearch"""
 import pickle
 from argparse import ArgumentParser
+from pathlib import Path
 from typing import List, Tuple
 
 import pandas as pd
@@ -66,16 +67,22 @@ def parse_args():
     """Parse command line arguments"""
     parser = ArgumentParser(description="Script for gridsearching model hyperparameters")
     parser.add_argument(
-        "--path_to_processed_nwp",
-        type=str,
+        "--dir_to_processed_nwp",
+        type=Path,
         required=True,
-        help="Directory to save collated data.",
+        help="Directory to load processed NWP data.",
+    )
+    parser.add_argument(
+        "--save_results_path", type=Path, required=True, help="Path to saved grid search results"
+    )
+    parser.add_argument(
+        "--save_model_path", type=Path, required=True, help="Path to saved best model"
     )
     args = parser.parse_args()
     return args
 
 
-def main(path_to_processed_nwp: str):
+def main(dir_to_processed_nwp: Path, path_to_gridsearch_results: Path, path_to_saved_model: Path):
     """Runs gridsearch on region-masked based model,
 
     Logic can be extended to other models also.
@@ -99,7 +106,7 @@ def main(path_to_processed_nwp: str):
     gsp = gsp.sel(datetime_gmt=evaluation_timeseries, gsp_id=0)
 
     step = 24
-    X = load_all_variable_slices(path_to_processed_nwp, step)
+    X = load_all_variable_slices(step, directory=dir_to_processed_nwp)
     X, y = build_datasets_from_local(X, gsp, nwp.coords["step"].values[step])
     _cv = build_ts_data_cv_splitting(X, 5, 2_000)
 
@@ -122,13 +129,13 @@ def main(path_to_processed_nwp: str):
         axis=1,
     )
 
-    scores.to_pickle("/home/tom/local_data/xgboost_uk_region_grid_search_results.pickle")
+    scores.to_pickle(path_to_gridsearch_results)
     pickle.dump(
         gsearch.best_estimator_,
-        open("/home/tom/local_data/xgboost_uk_region_best_model.pickle", "wb"),
+        open(path_to_saved_model, "wb"),
     )
 
 
 if __name__ == "__main__":
     args = parse_args()
-    main(args.path_to_processed_nwp)
+    main(args.dir_to_processed_nwp, args.save_results_path, args.save_model_path)

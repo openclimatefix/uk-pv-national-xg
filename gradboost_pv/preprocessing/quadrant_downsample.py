@@ -1,11 +1,30 @@
 """Quadrant downsampling preprocessing"""
+from pathlib import Path
 from typing import Optional
 
 import numpy as np
 import pandas as pd
 import xarray as xr
 
+from gradboost_pv.models.utils import DEFAULT_DIRECTORY_TO_PROCESSED_NWP
+
 DOWNSAMPLE_TO_NUM_POINTS = 2
+
+
+def build_local_save_path(
+    forecast_horizon_step: int, directory: Path = DEFAULT_DIRECTORY_TO_PROCESSED_NWP
+) -> Path:
+    """Builds filepath based on forecast horizon step.
+
+    Args:
+        forecast_horizon_step (int): Forecast step index
+        directory (Path, optional): Directory to data.
+        Defaults to DEFAULT_DIRECTORY_TO_PROCESSED_NWP.
+
+    Returns:
+        Path: Path to processed NWP forecast slice.
+    """
+    return directory / f"quadrant_nwp_processed_step_{forecast_horizon_step}.pickle"
 
 
 def _process_nwp(nwp_slice: xr.Dataset) -> xr.Dataset:
@@ -43,9 +62,7 @@ def bulk_preprocess_nwp(
 
     variables = nwp_forecast_step_slice.coords["variable"].values
     time_points = (
-        interpolation_points
-        if interpolate
-        else nwp_forecast_step_slice.coords["init_time"].values
+        interpolation_points if interpolate else nwp_forecast_step_slice.coords["init_time"].values
     )
 
     nwp_forecast_step_slice = _process_nwp(nwp_forecast_step_slice)

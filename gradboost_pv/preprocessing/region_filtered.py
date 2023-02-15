@@ -1,6 +1,7 @@
 """Preprocess NWP data using geospatial mask"""
 import itertools
 import multiprocessing as mp
+from pathlib import Path
 from typing import Iterable, Tuple, Union
 
 import geopandas as gpd
@@ -10,6 +11,8 @@ import requests
 import xarray as xr
 from shapely.geometry import MultiPolygon, Point, Polygon
 from shapely.ops import unary_union
+
+from gradboost_pv.models.utils import DEFAULT_DIRECTORY_TO_PROCESSED_NWP
 
 ESO_GEO_JSON_URL = (
     "https://data.nationalgrideso.com/backend/dataset/2810092e-d4b2-472f-b955-d8bea01f9ec0/"
@@ -25,6 +28,34 @@ DEFAULT_VARIABLES_FOR_PROCESSING = [
     "sde",
     "wdir10",
 ]
+
+
+def build_local_save_path(
+    forecast_horizon_step: int,
+    variable: str,
+    year: int,
+    directory: Path = DEFAULT_DIRECTORY_TO_PROCESSED_NWP,
+) -> Tuple[Path, Path]:
+    """Paths to inner and outer masked NWP data for specific year/variable/forecast horizon
+
+    Args:
+        forecast_horizon_step (int): Forecast step index
+        variable (str): NWP variable
+        year (int): Year of processed data
+        directory (Path, optional): Directory to data.
+        Defaults to DEFAULT_DIRECTORY_TO_PROCESSED_NWP.
+
+    Returns:
+        Tuple[Path, Path]: Paths to respective datasets
+    """
+    return (
+        directory
+        / str(year)
+        / f"uk_region_inner_variable_{variable}_step_{forecast_horizon_step}.pickle",
+        directory
+        / str(year)
+        / f"uk_region_outer_variable_{variable}_step_{forecast_horizon_step}.pickle",
+    )
 
 
 def query_eso_geojson() -> gpd.GeoDataFrame:

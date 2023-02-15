@@ -30,7 +30,7 @@ def parse_args():
     )
     parser.add_argument(
         "--path_to_database",
-        type=str,
+        type=Path,
         required=False,
         default=DEFAULT_PATH_TO_MOCK_DATABASE,
     )
@@ -85,6 +85,7 @@ def main(path_to_database: Path, model_loader_by_hour: Callable[[Hour], XGBRegre
 
     Args:
         path_to_database (Path): Path for mock local database.
+        model_loader_by_hour (Callable[[Hour], XGBRegressor]): Function for loading model by step
     """
     # load data to feed into mock data feed
     nwp, gsp = load_nwp(), load_gsp()

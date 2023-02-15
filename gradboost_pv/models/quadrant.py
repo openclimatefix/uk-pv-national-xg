@@ -1,4 +1,5 @@
 """Quadrant model - 4 point geospatial downsampling"""
+from pathlib import Path
 from typing import Tuple
 
 import numpy as np
@@ -6,18 +7,22 @@ import pandas as pd
 import xarray as xr
 from ocf_datapipes.utils.utils import trigonometric_datetime_transformation
 
-from gradboost_pv.models.utils import TRIG_DATETIME_FEATURE_NAMES, build_lagged_features
+from gradboost_pv.models.utils import (
+    DEFAULT_DIRECTORY_TO_PROCESSED_NWP,
+    TRIG_DATETIME_FEATURE_NAMES,
+    build_lagged_features,
+)
+from gradboost_pv.preprocessing.quadrant_downsample import build_local_save_path
 
 AUTO_REGRESSION_TARGET_LAG = np.timedelta64(1, "h")  # to avoid look ahead bias
 AUTO_REGRESSION_COVARIATE_LAG = AUTO_REGRESSION_TARGET_LAG + np.timedelta64(1, "h")
 
 
-def load_local_preprocessed_slice(forecast_horizon_step: int) -> np.ndarray:
-    """TODO - remove this, Load preprocessed from local directory"""
-    return np.load(
-        "/home/tom/local_data/"
-        f"geospatial_dsample_processed_nwp_data_step_{forecast_horizon_step}.npy"
-    )
+def load_local_preprocessed_slice(
+    forecast_horizon_step: int, directory: Path = DEFAULT_DIRECTORY_TO_PROCESSED_NWP
+) -> np.ndarray:
+    """Loads pickled NWP DataFrame."""
+    return pd.read_pickle(build_local_save_path(forecast_horizon_step, directory))
 
 
 def build_datasets_from_local(
