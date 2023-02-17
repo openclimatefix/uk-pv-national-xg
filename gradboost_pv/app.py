@@ -1,6 +1,5 @@
 """Script to simulate data read, model inference and prediction write"""
 import pathlib
-from argparse import ArgumentParser
 from pathlib import Path
 from typing import Optional
 
