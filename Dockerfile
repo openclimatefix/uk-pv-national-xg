@@ -5,7 +5,10 @@ ARG TESTING=0
 # make sure it doesnt fail if the docker file doesnt know the git commit
 ARG GIT_PYTHON_REFRESH=quiet
 
-RUN apt-get update
+# install extra requirements
+RUN apt-get clean
+RUN apt-get update -y
+RUN apt-get install gcc g++ libgeos-dev -y git -y pkg-config -y libhdf5-dev
 
 # copy files
 COPY setup.py app/setup.py
