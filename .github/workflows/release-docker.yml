@@ -11,4 +11,4 @@ jobs:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
     with:
       image_base_name: gradboost_pv
-      docker_file: infrastructure/Dockerfile
+      docker_file: Dockerfile
