@@ -130,6 +130,8 @@ if __name__ == "__main__":
     else:
         client = create_s3_client(args.s3_access_key, args.s3_secret_key)
 
-    load_model_by_hour = lambda hour: load_model(client, build_object_name(hour))
+    def load_model_by_hour(hour: Hour):
+        """Wrapper function for s3 client."""
+        return load_model(client, build_object_name(hour))
 
     main(args.path_to_database, load_model_by_hour)
