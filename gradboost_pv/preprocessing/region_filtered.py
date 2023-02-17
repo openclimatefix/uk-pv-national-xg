@@ -1,13 +1,15 @@
-from typing import Tuple, Union, Iterable
-from shapely.geometry import MultiPolygon, Polygon, Point
-from shapely.ops import unary_union
-import requests
-import geopandas as gpd
-from ocf_datapipes.utils.geospatial import osgb_to_lat_lon
-import numpy as np
-import multiprocessing as mp
-import xarray as xr
+"""Preprocess NWP data using geospatial mask"""
 import itertools
+import multiprocessing as mp
+from typing import Iterable, Tuple, Union
+
+import geopandas as gpd
+import numpy as np
+import pandas as pd
+import requests
+import xarray as xr
+from shapely.geometry import MultiPolygon, Point, Polygon
+from shapely.ops import unary_union
 
 ESO_GEO_JSON_URL = (
     "https://data.nationalgrideso.com/backend/dataset/2810092e-d4b2-472f-b955-d8bea01f9ec0/"
@@ -25,34 +27,46 @@ DEFAULT_VARIABLES_FOR_PROCESSING = [
 ]
 
 
-def get_eso_uk_multipolygon() -> MultiPolygon:
+def query_eso_geojson() -> gpd.GeoDataFrame:
+    """Query National grid ESO for spatial structure data for UK GSPs
+
+    Returns:
+        gpd.GeoDataFrame: GeoDataFrame containing UK-region information
+    """
     with requests.get(ESO_GEO_JSON_URL) as response:
         shape_gpd = gpd.read_file(response.text)
+    return shape_gpd
 
-        # calculate the centroid before using - to_crs
-        shape_gpd["centroid_x"] = shape_gpd["geometry"].centroid.x
-        shape_gpd["centroid_y"] = shape_gpd["geometry"].centroid.y
-        shape_gpd["centroid_lat"], shape_gpd["centroid_lon"] = osgb_to_lat_lon(
-            x=shape_gpd["centroid_x"], y=shape_gpd["centroid_y"]
-        )
 
-        shape_gpd.sort_values("GSPs", inplace=True)
-        shape_gpd.reset_index(inplace=True, drop=True)
-        shape_gpd["RegionID"] = range(1, len(shape_gpd) + 1)
+def process_eso_uk_multipolygon(uk_shape: gpd.GeoDataFrame) -> MultiPolygon:
+    """Processes the response from `query_eso_geojson` into a MultiPolygon object
 
-        return MultiPolygon(
-            Polygon(p.exterior) for p in unary_union(shape_gpd["geometry"].values)
-        )
+    Args:
+        uk_shape (gpd.GeoDataFrame): Input from National Grid ESO
+
+    Returns:
+        MultiPolygon: Object representing the UK-region.
+    """
+    concat_poly = unary_union(uk_shape["geometry"].values)
+
+    return MultiPolygon(Polygon(p.exterior) for p in concat_poly.geoms)
 
 
 def generate_polygon_mask(
     coordinates_x: Iterable[int], coordinates_y: Iterable[int], polygon: MultiPolygon
 ) -> np.ndarray:
-    coords = list(
-        map(
-            lambda x: Point(x[0], x[1]), itertools.product(coordinates_x, coordinates_y)
-        )
-    )
+    """Multiprocessed wrapper function to check if lists of coordinates lie within a polygon.
+
+    Args:
+        coordinates_x (Iterable[int]): x-coordinates of points of interest in OSGB
+        coordinates_y (Iterable[int]): y-coordinates of points of interest in OSGB
+        polygon (MultiPolygon): polygon to infer if points of interest lie within.
+
+    Returns:
+        np.ndarray: 2-D array where each (x_i, y_i) value signifies if the point (x_i, y_i) belong
+        to the polygon.
+    """
+    coords = list(map(lambda x: Point(x[0], x[1]), itertools.product(coordinates_x, coordinates_y)))
 
     # create a mask for belonging to UK region or not
     mask = check_points_in_multipolygon_multiprocessed(coords, polygon)
@@ -63,17 +77,34 @@ def generate_polygon_mask(
     return mask
 
 
-def check_point_in_multipolygon(
-    point: Point, polygon: Union[MultiPolygon, Polygon]
-) -> bool:
+def check_point_in_multipolygon(point: Point, polygon: Union[MultiPolygon, Polygon]) -> bool:
+    """Check if a point exists in a polygon
+
+    Args:
+        point (Point): Point of interest
+        polygon (Union[MultiPolygon, Polygon]): Polygon to check
+
+    Returns:
+        bool: True if Point is in the Polygon
+    """
     return polygon.contains(point)
 
 
 def check_points_in_multipolygon_multiprocessed(
     points: Iterable[Point],
     polygon: Union[MultiPolygon, Polygon],
-    num_processes: int = 10,
+    num_processes: int = 3,
 ) -> np.ndarray:
+    """Multiprocessed wrapper for checking points within a polygon
+
+    Args:
+        points (Iterable[Point]): collection of Points
+        polygon (Union[MultiPolygon, Polygon]): polygon to check
+        num_processes (int, optional): Defaults to 3.
+
+    Returns:
+        np.ndarray: _description_
+    """
     items = [(point, polygon) for point in points]
     results = list()
     with mp.Pool(num_processes) as pool:
@@ -82,19 +113,44 @@ def check_points_in_multipolygon_multiprocessed(
     return np.asarray(results)
 
 
+def _process_nwp(nwp_slice: xr.Dataset, mask: xr.DataArray) -> Tuple[xr.Dataset, xr.Dataset]:
+    """Processing logic for NWP region-based filtering and averaging.
+
+    Args:
+        nwp_slice (xr.Dataset): Subset of NWP dataset
+
+    Returns:
+        xr.Dataset: within-UK and outer-UK geospatial average.
+    """
+    uk_region = xr.where(~mask.isnull(), nwp_slice, np.nan).mean(dim=["x", "y"])
+    outer_region = xr.where(mask.isnull(), nwp_slice, np.nan).mean(dim=["x", "y"])
+
+    return uk_region, outer_region
+
+
 class NWPUKRegionMaskedDatasetBuilder:
-    def __init__(
-        self, nwp: xr.Dataset, evaluation_timepoints: Iterable[np.datetime64]
-    ) -> None:
+    """Class for iteratively processing NWP data."""
+
+    def __init__(self, nwp: xr.Dataset, evaluation_timepoints: pd.DatetimeIndex) -> None:
+        """Initalise dataset builder.
+
+        Args:
+            nwp (xr.Dataset): NWP xarray dataset [variable, step, init_time, x, y]
+            evaluation_timepoints (pd.DatetimeIndex): datetime points to interpolate onto
+        """
         self.nwp = nwp
         self.eval_timepoints = evaluation_timepoints
         self.mask = self.load_mask()
 
     def load_mask(self) -> xr.DataArray:
-        uk_polygon = get_eso_uk_multipolygon()
-        mask = generate_polygon_mask(
-            self.nwp.coords["x"], self.nwp.coords["y"], uk_polygon
-        )
+        """Loads UK region mask from National Grid ESO
+
+        Returns:
+            xr.DataArray: UK-region mask, on NWP (x,y) coords
+        """
+        uk_polygon = query_eso_geojson()
+        uk_polygon = process_eso_uk_multipolygon(uk_polygon)
+        mask = generate_polygon_mask(self.nwp.coords["x"], self.nwp.coords["y"], uk_polygon)
 
         # convert numpy array to xarray mask for a 1 variable, 1 step times series of (x,y) coords
         mask = xr.DataArray(
@@ -107,24 +163,36 @@ class NWPUKRegionMaskedDatasetBuilder:
         self,
         variable: str,
         step: int,
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        uk_region = xr.where(
-            ~self.mask.isnull(), self.nwp.isel(step=step).sel(variable=variable), np.nan
-        ).mean(dim=["x", "y"])
-        outer_region = xr.where(
-            self.mask.isnull(), self.nwp.isel(step=step).sel(variable=variable), np.nan
-        ).mean(dim=["x", "y"])
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """Process NWP sliced by variable and forecast step
+
+        Args:
+            variable (str): variable to slice
+            step (int): forecast horizon index to slice
+
+        Returns:
+            Tuple[pd.DataFrame, pd.DataFrame]: inner and outer downsampled data
+        """
+        _nwp = self.nwp.isel(step=step).sel(variable=variable)
+
+        uk_region, outer_region = _process_nwp(_nwp, self.mask)
 
         # interpolate both to the common GSP time points
         uk_region = (
-            uk_region.interp(init_time=self.eval_timepoints, method="linear")
-            .to_array()
-            .as_numpy()
+            uk_region.interp(init_time=self.eval_timepoints, method="linear").to_array().as_numpy()
         )
         outer_region = (
             outer_region.interp(init_time=self.eval_timepoints, method="linear")
             .to_array()
             .as_numpy()
+        )
+
+        # cast to dataframe
+        uk_region = pd.DataFrame(
+            index=self.eval_timepoints, columns=[f"{variable}_within"], data=uk_region
+        )
+        outer_region = pd.DataFrame(
+            index=self.eval_timepoints, columns=[f"{variable}_outer"], data=outer_region
         )
 
         return (uk_region, outer_region)

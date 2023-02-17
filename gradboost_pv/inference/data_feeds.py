@@ -1,3 +1,4 @@
+"""Datafeeds for model inference"""
 from dataclasses import dataclass
 from typing import Iterator
 
@@ -9,6 +10,8 @@ from torchdata.datapipes.iter import IterDataPipe
 
 @dataclass
 class DataInput:
+    """Input representation from Database read."""
+
     nwp: xr.Dataset
     gsp: xr.Dataset
     forecast_intitation_datetime_utc: np.datetime64
@@ -16,11 +19,20 @@ class DataInput:
 
 @functional_datapipe("mock_datafeed")
 class MockDataFeed(IterDataPipe):
+    """Mock Data Feed to simulate reading from a database of NWP and GSP values"""
+
     def __init__(self, nwp_data: xr.Dataset, national_gsp_data: xr.Dataset) -> None:
+        """Setup the mock data feed, pre-initalisation
+
+        Args:
+            nwp_data (xr.Dataset): Dataset of NWP variables
+            national_gsp_data (xr.Dataset): Dataset of GSP PV data
+        """
         self.nwp = nwp_data
         self.national_gsp_data = national_gsp_data
 
     def initialise(self):
+        """Create a data feed."""
         self.data_feed = self.create_data_feed(self.nwp, self.national_gsp_data)
 
     def create_data_feed(
@@ -76,6 +88,11 @@ class MockDataFeed(IterDataPipe):
         ]
 
     def __iter__(self) -> Iterator[DataInput]:
+        """Iteratively supply data from data feed.
+
+        Yields:
+            Iterator[DataInput]: Data, as read from a database
+        """
         assert self.data_feed is not None
         for datapoint in self.data_feed:
             yield datapoint

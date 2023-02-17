@@ -20,6 +20,8 @@ cucumber-report.json
 **/.vscode test/**
 **/.vscode-smoke/**
 **/.venv*/
+.vscode/
+.env
 port.txt
 precommit.hook
 pythonFiles/lib/**
@@ -46,3 +48,6 @@ dist/**
 *.xlf
 *.nls.*.json
 *.i18n.json
+
+# dont't track my junk!
+notebooks/junk/

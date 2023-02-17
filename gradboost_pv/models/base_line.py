@@ -1,7 +1,9 @@
+"""Baseline NWP model with no NWP data"""
+from typing import Tuple
+
 import numpy as np
 import pandas as pd
 import xarray as xr
-from typing import Tuple
 from ocf_datapipes.utils.utils import trigonometric_datetime_transformation
 
 from gradboost_pv.models.utils import TRIG_DATETIME_FEATURE_NAMES

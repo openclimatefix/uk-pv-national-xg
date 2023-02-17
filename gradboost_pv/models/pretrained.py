@@ -1,7 +1,9 @@
-import numpy as np
-import xarray as xr
-import pandas as pd
+"""Model built from pre-trained CNN passthrough"""
 from typing import Tuple
+
+import numpy as np
+import pandas as pd
+import xarray as xr
 from ocf_datapipes.utils.utils import trigonometric_datetime_transformation
 
 from gradboost_pv.models.utils import (
@@ -14,6 +16,7 @@ AUTO_REGRESSION_COVARIATE_LAG = AUTO_REGRESSION_TARGET_LAG + np.timedelta64(1, "
 
 
 def load_local_preprocessed_slice(forecast_horizon_step: int) -> pd.DataFrame:
+    """TODO - remove"""
     return pd.read_pickle(
         f"/home/tom/local_data/pretrained_nwp_processing_step_{forecast_horizon_step}.pkl"
     )
@@ -25,6 +28,17 @@ def build_datasets_from_local(
     forecast_horizon: np.timedelta64,
     summarize_buckets: bool = True,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Generates features for region-masked model.
+
+    Args:
+        processed_nwp_slice (pd.DataFrame): Processed NWP data performed at an earlier stage
+        national_gsp (xr.Dataset): National GSP PV data
+        forecast_horizon (np.timedelta64): forecast horizon for features
+        summarize_buckets (bool, optional): Used to simplify downsampled data from pretrained model.
+
+    Returns:
+        Tuple[pd.DataFrame, pd.DataFrame]: X and y
+    """
 
     if summarize_buckets:
         # group by variable, calculate mean and std among the buckets

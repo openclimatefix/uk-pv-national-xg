@@ -1,9 +1,10 @@
+"""Model utilities"""
 from pathlib import Path
+from typing import Callable, Tuple, Union
+
 import numpy as np
 import pandas as pd
-from typing import Union, Tuple
 from pvlib.location import Location
-
 
 NWP_VARIABLE_NUM = 17
 NWP_STEP_HORIZON = 37
@@ -56,12 +57,21 @@ PATH_TO_LOCAL_NWP_COORDINATES = (
 
 
 def save_nwp_coordinates(x: np.ndarray, y: np.ndarray):
+    """Convenience method for saving nwp grid coordiantes locally"""
     np.savez(PATH_TO_LOCAL_NWP_COORDINATES, x=x, y=y)
 
 
 def load_nwp_coordinates(
     path: Path = PATH_TO_LOCAL_NWP_COORDINATES,
 ) -> Tuple[np.ndarray, np.ndarray]:
+    """Convenience method for loading nwp grid coordinates locally.
+
+    Args:
+        path (Path, optional): Defaults to PATH_TO_LOCAL_NWP_COORDINATES.
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray]: x and y coordinates respectively.
+    """
     coords = np.load(path)
     return coords["x"], coords["y"]
 
@@ -73,6 +83,18 @@ def clipped_univariate_linear_regression(
     lower_clip: float = -10,
     epsilon: float = 0.01,
 ) -> float:
+    """Simple univariate regression, with values clipped.
+
+    Args:
+        X (np.ndarray): single covariate
+        y (np.ndarray): regression target
+        upper_clip (float, optional): clip values above this threshold. Defaults to 10.
+        lower_clip (float, optional): clip values below this threshold. Defaults to -10.
+        epsilon (float, optional): regularisation term. Defaults to 0.01.
+
+    Returns:
+        float: _description_
+    """
     return max(min((1 / ((X.T @ X) + epsilon)) * (X.T @ y), upper_clip), lower_clip)
 
 
@@ -80,7 +102,27 @@ def build_rolling_linear_regression_betas(
     X: Union[pd.Series, pd.DataFrame],
     y: Union[pd.Series, pd.DataFrame],
     window_size: int = DEFAULT_ROLLING_LR_WINDOW_SIZE,
+    regression_function: Callable[
+        [np.ndarray, np.ndarray], float
+    ] = clipped_univariate_linear_regression,
 ) -> pd.Series:
+    """Performs a rolling time-series of univariate regressions.
+
+    returns a time-series of _betas_, where _beta_ is the following:
+                        y = _beta_ * x
+    in our rolling regressions.
+
+    Args:
+        X (Union[pd.Series, pd.DataFrame]): time-series of 1-D variable
+        y (Union[pd.Series, pd.DataFrame]): time-series of 1-D target
+        window_size (int, optional): size of rolling window. Defaults to
+        DEFAULT_ROLLING_LR_WINDOW_SIZE.
+        regreession_function (Callable[[np.ndarray, np.ndarray], float]):
+        Function to regress x and y.
+
+    Returns:
+        pd.Series: time-series of the regression coefficients
+    """
 
     assert len(X) == len(y)
 
@@ -90,7 +132,7 @@ def build_rolling_linear_regression_betas(
             X.iloc[(n - window_size) : n].values,
             y.iloc[(n - window_size) : n].values,
         )
-        _beta = clipped_univariate_linear_regression(_x, _y)
+        _beta = regression_function(_x, _y)
         betas[n] = _beta
 
     return pd.Series(data=betas, index=y.index, name="LR_Beta")
@@ -162,4 +204,4 @@ def build_lagged_features(
     )
     pv_autoregressive_lags.columns = ["PV_LAG_DAY", "PV_LAG_1HR", "PV_LAG_2HR"]
 
-    return pv_autoregressive_lags
+    return pv_autoregressive_lags.reindex(gsp.index).dropna()

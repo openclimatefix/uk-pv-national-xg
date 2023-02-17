@@ -1,18 +1,18 @@
-from argparse import ArgumentParser
+"""Script for processing raw NWP data"""
 import datetime as dt
-import numpy as np
+import itertools
+from argparse import ArgumentParser
+
 import pandas as pd
 import xarray as xr
-import itertools
-from typing import Tuple
 
+from gradboost_pv.models.region_filtered import build_local_save_path
+from gradboost_pv.models.utils import GSP_FPATH, NWP_FPATH, NWP_STEP_HORIZON
 from gradboost_pv.preprocessing.region_filtered import (
-    NWPUKRegionMaskedDatasetBuilder,
     DEFAULT_VARIABLES_FOR_PROCESSING,
+    NWPUKRegionMaskedDatasetBuilder,
 )
-from gradboost_pv.models.utils import NWP_STEP_HORIZON, NWP_FPATH, GSP_FPATH
 from gradboost_pv.utils.logger import getLogger
-
 
 logger = getLogger("uk-region-filter-nwp-data")
 
@@ -21,6 +21,11 @@ FORECAST_HORIZONS = range(NWP_STEP_HORIZON)
 
 
 def parse_args():
+    """Parse command line arguments.
+
+    Returns:
+        args: Returns arguments
+    """
     parser = ArgumentParser(
         description="Script to bulk process NWP xarray data for later use in simple ML model."
     )
@@ -29,13 +34,6 @@ def parse_args():
     )
     args = parser.parse_args()
     return args
-
-
-def _build_local_save_path(path_to_dir, forecast_horizon, variable) -> Tuple[str, str]:
-    return (
-        f"{path_to_dir}/uk_region_inner_variable_{variable}_step_{forecast_horizon}.npy",
-        f"{path_to_dir}/uk_region_outer_variable_{variable}_step_{forecast_horizon}.npy",
-    )
 
 
 def main():
@@ -60,6 +58,7 @@ def main():
         start_datetime, end_datetime = date_years[i], date_years[i + 1]
         _nwp = nwp.sel(init_time=slice(start_datetime, end_datetime))
 
+        # time points to interpolate our nwp data onto.
         evaluation_timeseries = (
             gsp.coords["datetime_gmt"]
             .where(
@@ -69,9 +68,6 @@ def main():
             )
             .values
         )
-
-        # save the time points of our dataset
-        np.save(f"{args.save_dir}/{year}/eval_timepoints.npy", evaluation_timeseries)
 
         dataset_builder = NWPUKRegionMaskedDatasetBuilder(
             _nwp,
@@ -86,12 +82,12 @@ def main():
                 var, step
             )
 
-            inner_fpath, outer_fpath = _build_local_save_path(
-                f"{args.save_dir}/{year}", step, var
+            inner_fpath, outer_fpath = build_local_save_path(
+                f"{args.save_dir}/{year}", step, var, year
             )
 
-            np.save(inner_fpath, uk_region)
-            np.save(outer_fpath, outer_region)
+            uk_region.to_pickle(inner_fpath)
+            outer_region.to_pickle(outer_fpath)
 
             logger.info(
                 f"({i}/{len(years)}) Completed UK + Outer Region Feature Extraction for "
