@@ -1,9 +1,11 @@
 """Datafeeds for model inference"""
 from dataclasses import dataclass
-from typing import Iterator
+from pathlib import Path
+from typing import Iterator, Union
 
 import numpy as np
 import xarray as xr
+from ocf_datapipes.production.xgnational import xgnational_production
 from torchdata.datapipes import functional_datapipe
 from torchdata.datapipes.iter import IterDataPipe
 
@@ -57,9 +59,7 @@ class MockDataFeed(IterDataPipe):
 
         tseries_nwp = nwp.coords["init_time"].values
         tseries_gsp = gsp.coords["datetime_gmt"].values
-        assert (
-            tseries_nwp[0] == tseries_gsp[0]
-        ), "Datasets must start at the same point in time"
+        assert tseries_nwp[0] == tseries_gsp[0], "Datasets must start at the same point in time"
 
         tseries = np.sort(
             np.unique(
@@ -96,3 +96,15 @@ class MockDataFeed(IterDataPipe):
         assert self.data_feed is not None
         for datapoint in self.data_feed:
             yield datapoint
+
+
+@functional_datapipe("production_datafeed")
+class ProductionDataFeed(IterDataPipe):
+    def __init__(self, path_to_configuration_file: Union[str, Path]) -> None:
+        self.path_to_configuration_file = path_to_configuration_file
+
+    def __iter__(self) -> Iterator[DataInput]:
+        data = xgnational_production(self.path_to_configuration_file)
+        yield DataInput(
+            nwp=data["nwp"], gsp=data["gsp"], forecast_intitation_datetime_utc=np.datetime64("now")
+        )

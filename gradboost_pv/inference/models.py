@@ -7,9 +7,11 @@ from typing import Callable, Dict
 import numpy as np
 import pandas as pd
 import xarray as xr
+import yaml
 from ocf_datapipes.utils.utils import trigonometric_datetime_transformation
 from xgboost import XGBRegressor
 
+import gradboost_pv
 from gradboost_pv.inference.data_feeds import DataInput
 from gradboost_pv.models.utils import (
     TRIG_DATETIME_FEATURE_NAMES,
@@ -24,6 +26,7 @@ from gradboost_pv.preprocessing.region_filtered import (
     query_eso_geojson,
 )
 from gradboost_pv.utils.logger import getLogger
+from gradboost_pv.utils.typing import Hour
 
 DEFAULT_PATH_TO_UK_REGION_MASK = Path(__file__).parents[2] / "data/uk_region_mask.npy"
 DEFAULT_MODEL_COVARIATES = [
@@ -61,9 +64,6 @@ DEFAULT_MODEL_COVARIATES = [
     "azimuth",
     "equation_of_time",
 ]
-
-# store models and results by hours ahead
-Hour = int
 
 
 @dataclass(frozen=True)
@@ -107,23 +107,19 @@ class NationalPVModelConfig:
     name: str
 
     # local path to mask
-    path_to_uk_region_mask: Path = DEFAULT_PATH_TO_UK_REGION_MASK
+    path_to_uk_region_mask: Path = Path("/home/tom/dev/gradboost_pv/data/uk_region_mask.npy")
 
     # period of observation for nwp and gsp at each evaluation
     gsp_data_history: np.timedelta64 = np.timedelta64(24, "h")
     gsp_data_frequency: str = "30T"
 
     # hours ahead to forecast
-    forecast_horizon_hours: list[Hour] = field(
-        default_factory=_load_default_forecast_horizons
-    )
+    forecast_horizon_hours: list[Hour] = field(default_factory=_load_default_forecast_horizons)
     # subset of NWP variables used by model
     nwp_variables: list[str] = field(default_factory=_load_default_nwp_variables)
 
     # required features for our model to run
-    required_model_covariates: list[str] = field(
-        default_factory=_load_default_model_covariates
-    )
+    required_model_covariates: list[str] = field(default_factory=_load_default_model_covariates)
 
     # whether we mark the time of inference as the read time of database
     # or the machine's clock time
@@ -133,6 +129,35 @@ class NationalPVModelConfig:
     # clip near zero forecast values to zero
     clip_near_zero_predictions: bool = True
     clip_near_zero_value_kw: float = 50.0
+
+    # raw NWP/GSP data on GCP has different var names to prod datapipes NWP
+    time_variable_name: str = "init_time_utc"  # init_time <=> init_time_utc
+    nwp_variable_name: str = "channel"  # variable <=> channel
+    x_coord_name: str = "x_osgb"  # x <=> x_osgb
+    y_coord_name: str = "y_osgb"  # y <=> y_osgb
+
+    gsp_time_variable_name: str = "datetime_utc"  # datetime_gmt <=> datetime_utc
+    gsp_pv_generation_name: str = "solar_generation_mw"  # generation_mw <=> solar_generation_mw
+    gsp_installed_capacity_name: str = (
+        "installed_capacity_mw"  # installedcapacity_mwp <=> installed_capacity_mw
+    )
+
+    @classmethod
+    def load_from_yaml(cls, path_to_yaml: Path):
+        with open(path_to_yaml, "r") as stream:
+            loaded_config = yaml.safe_load(stream)
+
+        processors = {
+            "path_to_uk_region_mask": lambda x: Path(gradboost_pv.__file__).parents[1] / x,
+            "gsp_data_history": lambda x: np.timedelta64(x, "h"),
+        }
+
+        processed_configs = {
+            var: processors[var](value) for var, value in loaded_config.items() if var in processors
+        }
+        loaded_config.update(processed_configs)
+
+        return cls(**loaded_config)
 
 
 class BaseInferenceModel(ABC):
@@ -206,15 +231,11 @@ class NationalBoostInferenceModel(BaseInferenceModel):
             Dict[Hour, XGBRegressor]: dict of models indexed by forecast horizon
         """
         return {
-            forecast_horizon_hour: self.load_model_per_forecast_horizon(
-                forecast_horizon_hour
-            )
+            forecast_horizon_hour: self.load_model_per_forecast_horizon(forecast_horizon_hour)
             for forecast_horizon_hour in self._config.forecast_horizon_hours
         }
 
-    def load_model_per_forecast_horizon(
-        self, forecast_horizon_hour: Hour
-    ) -> XGBRegressor:
+    def load_model_per_forecast_horizon(self, forecast_horizon_hour: Hour) -> XGBRegressor:
         """Wrapper for model loading"""
         return self.model_loader(forecast_horizon_hour)
 
@@ -236,9 +257,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
             # couldn't find locally, download instead
             uk_polygon = query_eso_geojson()
             uk_polygon = process_eso_uk_multipolygon(uk_polygon)
-            mask = generate_polygon_mask(
-                self.nwp_x_coords, self.nwp_y_coords, uk_polygon
-            )
+            mask = generate_polygon_mask(self.nwp_x_coords, self.nwp_y_coords, uk_polygon)
 
         mask = xr.DataArray(
             np.tile(
@@ -250,7 +269,12 @@ class NationalBoostInferenceModel(BaseInferenceModel):
                     1,
                 ),
             ),
-            dims=["variable", "step", "x", "y"],
+            dims=[
+                self._config.nwp_variable_name,
+                "step",
+                self._config.x_coord_name,
+                self._config.y_coord_name,
+            ],
         )
         return mask
 
@@ -266,15 +290,13 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         """
         # GSP PV data is 30 min intervals for 24 hours (inclusive)
         assert (
-            pd.infer_freq(data.gsp.coords["datetime_gmt"].values)
+            pd.infer_freq(data.gsp.coords[self._config.gsp_time_variable_name].values)
             == self._config.gsp_data_frequency
         )
-        assert len(data.gsp.coords["datetime_gmt"].values) == (2 * 24 + 1)
+        assert len(data.gsp.coords[self._config.gsp_time_variable_name].values) == (2 * 24 + 1)
 
         # check that the variables we would like are available
-        assert set(self._config.nwp_variables).issubset(
-            data.nwp.coords["variable"].values
-        )
+        assert set(self._config.nwp_variables).issubset(data.nwp.coords["variable"].values)
 
     def covariate_transform(self, data: DataInput) -> Covariates:
         """Transform raw nwp and gsp data to features for model inference.
@@ -308,18 +330,22 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         # cast to pandas
         nwp_inner = pd.DataFrame(
             data=nwp_inner.to_array()
-            .values.reshape(len(_nwp.coords["variable"]), len(_nwp.coords["step"]))
+            .values.reshape(
+                len(_nwp.coords[self._config.nwp_variable_name]), len(_nwp.coords["step"])
+            )
             .T,
             index=self._config.forecast_horizon_hours,
-            columns=[f"{var}_within" for var in _nwp.coords["variable"].values],
+            columns=[f"{var}_within" for var in _nwp.coords[self._config.nwp_variable_name].values],
         )
 
         nwp_outer = pd.DataFrame(
             data=nwp_outer.to_array()
-            .values.reshape(len(_nwp.coords["variable"]), len(_nwp.coords["step"]))
+            .values.reshape(
+                len(_nwp.coords[self._config.nwp_variable_name]), len(_nwp.coords["step"])
+            )
             .T,
             index=self._config.forecast_horizon_hours,
-            columns=[f"{var}_outer" for var in _nwp.coords["variable"].values],
+            columns=[f"{var}_outer" for var in _nwp.coords[self._config.nwp_variable_name].values],
         )
 
         nwp_diff = pd.DataFrame(
@@ -330,8 +356,9 @@ class NationalBoostInferenceModel(BaseInferenceModel):
 
         # process PV/GSP data
         gsp = pd.DataFrame(
-            data.gsp["generation_mw"].values / data.gsp["installedcapacity_mwp"].values,
-            index=data.gsp.coords["datetime_gmt"].values,
+            data.gsp[self._config.gsp_pv_generation_name].values
+            / data.gsp[self._config.gsp_installed_capacity_name].values,
+            index=data.gsp.coords[self._config.gsp_time_variable_name].values,
             columns=["target"],
         ).sort_index(ascending=False)
 
@@ -358,9 +385,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
 
         # build lagged features for each forecast horizon
         for step in self._config.forecast_horizon_hours:
-            lags = build_lagged_features(gsp, np.timedelta64(step, "h")).loc[
-                [gsp.index.max()]
-            ]
+            lags = build_lagged_features(gsp, np.timedelta64(step, "h")).loc[[gsp.index.max()]]
             lags.index = [step]
             pv_autoregressive_lags.append(lags)
 
@@ -372,9 +397,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
             len(self._config.forecast_horizon_hours),
             len(self._config.required_model_covariates),
         )
-        assert sorted(X.columns.tolist()) == sorted(
-            self._config.required_model_covariates
-        )
+        assert sorted(X.columns.tolist()) == sorted(self._config.required_model_covariates)
 
         inference_time = (
             data.forecast_intitation_datetime_utc
@@ -389,7 +412,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
             covariates=X[self._config.required_model_covariates],
             installed_capacity_mwp_at_inference_time=data.gsp.sel(
                 datetime_gmt=data.gsp.datetime_gmt.max().values
-            )["installedcapacity_mwp"].values.item(),
+            )[self._config.gsp_installed_capacity_name].values.item(),
             inference_datetime_utc=inference_time,
         )
         return cov
@@ -435,9 +458,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         pv_amount = forecast * pv_capacity_mwp
 
         if self._config.clip_near_zero_predictions:
-            pv_amount = (
-                pv_amount if pv_amount > self._config.clip_near_zero_value_kw else 0.0
-            )
+            pv_amount = pv_amount if pv_amount > self._config.clip_near_zero_value_kw else 0.0
 
         return Prediction(
             inference_datetime,

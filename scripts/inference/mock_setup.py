@@ -96,7 +96,17 @@ def main(path_to_database: Path, model_loader_by_hour: Callable[[Hour], XGBRegre
 
     # load in our national pv model
     x, y = load_nwp_coordinates()
-    config = NationalPVModelConfig("mock_inference", overwrite_read_datetime_at_inference=False)
+    config = NationalPVModelConfig(
+        "mock_inference",
+        overwrite_read_datetime_at_inference=False,
+        time_variable_name="init_time",
+        nwp_variable_name="variable",
+        x_coord_name="x",
+        y_coord_name="y",
+        gsp_time_variable_name="datetime_gmt",
+        gsp_pv_generation_name="generation_mw",
+        gsp_installed_capacity_name="installedcapacity_mw",
+    )
     model = NationalBoostInferenceModel(config, model_loader_by_hour, x, y)
     model.initialise()
 
