@@ -83,13 +83,7 @@ def parse_args():
 
 
 def main(dir_to_processed_nwp: Path, path_to_gridsearch_results: Path, path_to_saved_model: Path):
-    """Runs gridsearch on region-masked based model,
-
-    Logic can be extended to other models also.
-
-    Args:
-        path_to_processed_nwp (str): Path for processed NWP-region masked data
-    """
+    """Runs gridsearch on region-masked based model"""
     gsp = xr.open_zarr(GSP_FPATH)
     nwp = xr.open_zarr(NWP_FPATH)
 

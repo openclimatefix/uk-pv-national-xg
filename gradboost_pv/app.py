@@ -22,31 +22,6 @@ DEFAULT_PATH_TO_MOCK_DATABASE = (
 logger = getLogger(__name__)
 
 
-def parse_args():
-    """Parse command line arguments.
-
-    Returns:
-        args: Returns arguments
-    """
-    parser = ArgumentParser(
-        description="Script to run mock inference of NationalPV model using data from GCP."
-    )
-    parser.add_argument(
-        "--path_to_database",
-        type=Path,
-        required=False,
-        default=DEFAULT_PATH_TO_MOCK_DATABASE,
-    )
-    parser.add_argument(
-        "--s3_access_key", type=str, required=False, default=None, help="s3 API Access Key"
-    )
-    parser.add_argument(
-        "--s3_secret_key", type=str, required=False, default=None, help="s3 API Secret Key"
-    )
-    args = parser.parse_args()
-    return args
-
-
 @click.command()
 @click.option(
     "--path_to_model_config",
@@ -84,6 +59,7 @@ def main(
     s3_access_key: Optional[str] = None,
     s3_secret_key: Optional[str] = None,
 ):
+    """Entry point for inference script"""
     if s3_access_key is None or s3_secret_key is None:
         logger.debug("Creating s3 client with default env.var keys.")
         client = create_s3_client()

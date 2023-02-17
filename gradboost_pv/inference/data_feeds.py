@@ -100,10 +100,18 @@ class MockDataFeed(IterDataPipe):
 
 @functional_datapipe("production_datafeed")
 class ProductionDataFeed(IterDataPipe):
+    """DataPipe reading NWP and GSP values from ocf_datapipes function"""
+
     def __init__(self, path_to_configuration_file: Union[str, Path]) -> None:
+        """Datafeed."""
         self.path_to_configuration_file = path_to_configuration_file
 
     def __iter__(self) -> Iterator[DataInput]:
+        """Returns a single observation of NWP data and 24 hours of GSP data.
+
+        Yields:
+            Iterator[DataInput]: Input data for model feature generation.
+        """
         data = xgnational_production(self.path_to_configuration_file)
         yield DataInput(
             nwp=data["nwp"], gsp=data["gsp"], forecast_intitation_datetime_utc=np.datetime64("now")

@@ -144,6 +144,7 @@ class NationalPVModelConfig:
 
     @classmethod
     def load_from_yaml(cls, path_to_yaml: Path):
+        """Convenience method to instantiate from yaml file."""
         with open(path_to_yaml, "r") as stream:
             loaded_config = yaml.safe_load(stream)
 
