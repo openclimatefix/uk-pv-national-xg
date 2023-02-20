@@ -5,10 +5,9 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from xgboost import XGBRegressor
-
-from nowcasting_datamodel.models.convert import convert_df_to_national_forecast
 from nowcasting_datamodel.connection import DatabaseConnection
+from nowcasting_datamodel.models.convert import convert_df_to_national_forecast
+from xgboost import XGBRegressor
 
 import gradboost_pv
 from gradboost_pv.inference.data_feeds import ProductionDataFeed
