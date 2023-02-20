@@ -1,9 +1,12 @@
 """Script to simulate data read, model inference and prediction write"""
+import os
 import pathlib
 from pathlib import Path
 from typing import Optional
 
 import click
+from nowcasting_datamodel.connection import DatabaseConnection
+from nowcasting_datamodel.models.convert import convert_df_to_national_forecast
 from xgboost import XGBRegressor
 
 import gradboost_pv
@@ -80,28 +83,39 @@ def main(
     data_feed = ProductionDataFeed(path_to_datafeed_config)
     logger.debug("Defined production feed.")
 
-    if not write_to_database:
-        # create a mock database to write to
-        logger.debug("Not writing to database, storing in local mock database")
-        database_conn = MockDatabaseConnection(
-            DEFAULT_PATH_TO_MOCK_DATABASE, overwrite_database=True
-        )
-
-    else:
-        # create connection to actual database TODO
-        pass
+    # create a mock database to write to
+    logger.debug("Not writing to database, storing in local mock database")
+    database_conn = MockDatabaseConnection(DEFAULT_PATH_TO_MOCK_DATABASE, overwrite_database=True)
 
     inference_pipeline = NationalBoostModelInference(model, data_feed, database_conn)
     inference_pipeline.run()
     logger.debug("Model inference complete")
 
+    # get dataframe object
+    database_conn = MockDatabaseConnection(DEFAULT_PATH_TO_MOCK_DATABASE, overwrite_database=False)
+    database_conn.connect()
+    results_df = database_conn.database.data
+
     if not write_to_database:
-        # print predictions to console
-        database_conn = MockDatabaseConnection(
-            DEFAULT_PATH_TO_MOCK_DATABASE, overwrite_database=False
-        )
-        database_conn.connect()
-        print(database_conn.database.data)
+        print(results_df)
+    else:
+
+        connection = DatabaseConnection(url=os.getenv("DB_URL"))
+
+        with connection.get_session() as session:
+
+            results_df["forecast_mw"] = results_df["forecast_kw"] / 1000.0
+
+            forecast_sql = convert_df_to_national_forecast(
+                forecast_values_df=results_df,
+                session=session,
+                model_name="National_xg",
+                version="0.0.1",  # TODO update 0.0.1
+            )
+
+            # add to database
+            session.add(forecast_sql)
+            session.commit()
 
 
 if __name__ == "__main__":
