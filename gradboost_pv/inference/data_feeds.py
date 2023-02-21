@@ -92,6 +92,7 @@ class ProductionOpenNWPNetcdfIterDataPipe(IterDataPipe):
 def xgnational_production(configuration_filename: Union[Path, str]) -> dict:
     """
     Create the National XG Boost  using a configuration
+
     Args:
         configuration_filename: Name of the configuration
     Returns:
