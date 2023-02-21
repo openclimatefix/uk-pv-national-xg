@@ -48,4 +48,4 @@ required_model_covariates: [
     "equation_of_time"]
 overwrite_read_datetime_at_inference: True
 clip_near_zero_predictions: True
-clip_near_zero_value_percentage: 0.05 
+clip_near_zero_value_percentage: 0.005 

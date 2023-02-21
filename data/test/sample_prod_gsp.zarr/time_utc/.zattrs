@@ -1,0 +1,7 @@
+{
+    "_ARRAY_DIMENSIONS": [
+        "time_utc"
+    ],
+    "calendar": "proleptic_gregorian",
+    "units": "minutes since 2023-02-20 11:00:00"
+}

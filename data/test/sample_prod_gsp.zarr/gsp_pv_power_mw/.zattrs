@@ -1,0 +1,7 @@
+{
+    "_ARRAY_DIMENSIONS": [
+        "time_utc",
+        "gsp_id"
+    ],
+    "coordinates": "y_osgb capacity_megawatt_power x_osgb"
+}

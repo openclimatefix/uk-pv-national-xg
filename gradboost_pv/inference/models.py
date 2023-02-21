@@ -65,8 +65,6 @@ DEFAULT_MODEL_COVARIATES = [
     "equation_of_time",
 ]
 
-UK_CAPACITY_MW = 14_000  # TODO - more accurate number
-
 
 @dataclass(frozen=True)
 class Covariates:
@@ -142,8 +140,9 @@ class NationalPVModelConfig:
     y_coord_name: str = "y_osgb"  # y <=> y_osgb
 
     gsp_time_variable_name: str = "time_utc"  # datetime_gmt <=> time_utc
-    gsp_pv_generation_name: str = (
-        "capacity_megawatt_power"  # generation_mw <=> capacity_megawatt_power
+    gsp_pv_generation_name: str = "gsp_pv_power_mw"  # generation_mw <=> gsp_pv_power_mw
+    gsp_installed_capacity_name: str = (
+        "capacity_megawatt_power"  # installedcapacity_mwp <=> capacity_megawatt_power
     )
 
     @classmethod
@@ -367,7 +366,8 @@ class NationalBoostInferenceModel(BaseInferenceModel):
 
         # process PV/GSP data
         gsp = pd.DataFrame(
-            data.gsp[self._config.gsp_pv_generation_name].values / UK_CAPACITY_MW,
+            data.gsp[self._config.gsp_pv_generation_name].values
+            / data.gsp[self._config.gsp_installed_capacity_name].values,
             index=data.gsp.coords[self._config.gsp_time_variable_name].values,
             columns=["target"],
         ).sort_index(ascending=False)
@@ -432,7 +432,15 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         # see https://github.com/dmlc/xgboost/issues/636
         cov = Covariates(
             covariates=X[self._config.required_model_covariates],
-            installed_capacity_mwp_at_inference_time=UK_CAPACITY_MW,
+            installed_capacity_mwp_at_inference_time=data.gsp.sel(
+                {
+                    self._config.gsp_time_variable_name: data.gsp.coords[
+                        self._config.gsp_time_variable_name
+                    ]
+                    .max()
+                    .values
+                }
+            )[self._config.gsp_installed_capacity_name].values.item(),
             inference_datetime_utc=inference_time,
         )
         return cov
