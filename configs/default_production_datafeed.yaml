@@ -4,9 +4,10 @@ general:
 input_data:
   #---------------------- GSP -------------------
   gsp:
-    gsp_zarr_path: ./nowcasting_forecast
     history_minutes: 1440  # 60 x 24
     forecast_minutes: 480
+    live_load_extra_minutes: 0
+    live_interpolate_minutes: 0
     log_level: "INFO"
     is_live: True
 

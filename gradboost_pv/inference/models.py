@@ -65,6 +65,8 @@ DEFAULT_MODEL_COVARIATES = [
     "equation_of_time",
 ]
 
+UK_CAPACITY_MW = 14_000  # TODO - more accurate number
+
 
 @dataclass(frozen=True)
 class Covariates:
@@ -118,6 +120,9 @@ class NationalPVModelConfig:
     # subset of NWP variables used by model
     nwp_variables: list[str] = field(default_factory=_load_default_nwp_variables)
 
+    # allow model to evaulate on incomplete set of nwp data (inaccurate results will follow!)
+    allow_missing_covariates: bool = False
+
     # required features for our model to run
     required_model_covariates: list[str] = field(default_factory=_load_default_model_covariates)
 
@@ -126,9 +131,9 @@ class NationalPVModelConfig:
     # not overwriting allows for backfilling data with a mock data feed
     overwrite_read_datetime_at_inference: bool = True
 
-    # clip near zero forecast values to zero
+    # clip near zero forecast % values to zero
     clip_near_zero_predictions: bool = True
-    clip_near_zero_value_kw: float = 50.0
+    clip_near_zero_value_percentage: float = 0.05
 
     # raw NWP/GSP data on GCP has different var names to prod datapipes NWP
     time_variable_name: str = "init_time_utc"  # init_time <=> init_time_utc
@@ -136,10 +141,9 @@ class NationalPVModelConfig:
     x_coord_name: str = "x_osgb"  # x <=> x_osgb
     y_coord_name: str = "y_osgb"  # y <=> y_osgb
 
-    gsp_time_variable_name: str = "datetime_utc"  # datetime_gmt <=> datetime_utc
-    gsp_pv_generation_name: str = "solar_generation_mw"  # generation_mw <=> solar_generation_mw
-    gsp_installed_capacity_name: str = (
-        "installed_capacity_mw"  # installedcapacity_mwp <=> installed_capacity_mw
+    gsp_time_variable_name: str = "time_utc"  # datetime_gmt <=> time_utc
+    gsp_pv_generation_name: str = (
+        "capacity_megawatt_power"  # generation_mw <=> capacity_megawatt_power
     )
 
     @classmethod
@@ -297,7 +301,9 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         assert len(data.gsp.coords[self._config.gsp_time_variable_name].values) == (2 * 24 + 1)
 
         # check that the variables we would like are available
-        assert set(self._config.nwp_variables).issubset(data.nwp.coords["variable"].values)
+        assert set(self._config.nwp_variables).issubset(
+            data.nwp.coords[self._config.nwp_variable_name].values
+        )
 
     def covariate_transform(self, data: DataInput) -> Covariates:
         """Transform raw nwp and gsp data to features for model inference.
@@ -322,11 +328,15 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         # basic data checking
         self.check_incoming_data(data)
 
-        _nwp = data.nwp.sel(variable=self._config.nwp_variables)
-        _nwp = _nwp.isel(step=self._config.forecast_horizon_hours)
+        _nwp = data.nwp.sel({self._config.nwp_variable_name: self._config.nwp_variables})
+        _nwp = _nwp.sel(
+            step=[np.timedelta64(hour, "h") for hour in self._config.forecast_horizon_hours]
+        )
 
         # use region-masked nwp processing
-        nwp_inner, nwp_outer = _process_nwp(_nwp, self.mask)
+        nwp_inner, nwp_outer = _process_nwp(
+            _nwp, self.mask, self._config.x_coord_name, self._config.y_coord_name
+        )
 
         # cast to pandas
         nwp_inner = pd.DataFrame(
@@ -357,8 +367,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
 
         # process PV/GSP data
         gsp = pd.DataFrame(
-            data.gsp[self._config.gsp_pv_generation_name].values
-            / data.gsp[self._config.gsp_installed_capacity_name].values,
+            data.gsp[self._config.gsp_pv_generation_name].values / UK_CAPACITY_MW,
             index=data.gsp.coords[self._config.gsp_time_variable_name].values,
             columns=["target"],
         ).sort_index(ascending=False)
@@ -394,11 +403,13 @@ class NationalBoostInferenceModel(BaseInferenceModel):
 
         X = pd.concat([X, pv_autoregressive_lags, solar_variables], axis=1)
 
-        assert X.shape == (
-            len(self._config.forecast_horizon_hours),
-            len(self._config.required_model_covariates),
-        )
-        assert sorted(X.columns.tolist()) == sorted(self._config.required_model_covariates)
+        if not self._config.allow_missing_covariates:
+
+            assert X.shape == (
+                len(self._config.forecast_horizon_hours),
+                len(self._config.required_model_covariates),
+            )
+            assert sorted(X.columns.tolist()) == sorted(self._config.required_model_covariates)
 
         inference_time = (
             data.forecast_intitation_datetime_utc
@@ -406,14 +417,22 @@ class NationalBoostInferenceModel(BaseInferenceModel):
             else np.datetime64("now")
         )
 
+        if (
+            len(X.columns) < len(self._config.required_model_covariates)
+        ) and self._config.allow_missing_covariates:
+            # add missing data for the features we didnt generate.
+            missing_cols = [
+                covar for covar in self._config.required_model_covariates if covar not in X.columns
+            ]
+            self.logger.info(f"Identified {len(missing_cols)} missing features, continuing anyway.")
+            X[missing_cols] = np.nan
+
         # reorder covariates, XGBoost requires inference/training design matrix
         # to have the same order (it doesn't store column names internally)
         # see https://github.com/dmlc/xgboost/issues/636
         cov = Covariates(
             covariates=X[self._config.required_model_covariates],
-            installed_capacity_mwp_at_inference_time=data.gsp.sel(
-                datetime_gmt=data.gsp.datetime_gmt.max().values
-            )[self._config.gsp_installed_capacity_name].values.item(),
+            installed_capacity_mwp_at_inference_time=UK_CAPACITY_MW,
             inference_datetime_utc=inference_time,
         )
         return cov
@@ -456,10 +475,11 @@ class NationalBoostInferenceModel(BaseInferenceModel):
     ) -> Prediction:
         """Sanitize model output into Prediction object"""
 
-        pv_amount = forecast * pv_capacity_mwp
-
+        # TODO - model does not always predict 0.0 in night time, check clipping threshold.
         if self._config.clip_near_zero_predictions:
-            pv_amount = pv_amount if pv_amount > self._config.clip_near_zero_value_kw else 0.0
+            forecast = forecast if forecast > self._config.clip_near_zero_value_percentage else 0.0
+
+        pv_amount = forecast * pv_capacity_mwp
 
         return Prediction(
             inference_datetime,

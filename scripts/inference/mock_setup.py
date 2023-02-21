@@ -105,7 +105,6 @@ def main(path_to_database: Path, model_loader_by_hour: Callable[[Hour], XGBRegre
         y_coord_name="y",
         gsp_time_variable_name="datetime_gmt",
         gsp_pv_generation_name="generation_mw",
-        gsp_installed_capacity_name="installedcapacity_mwp",
     )
     model = NationalBoostInferenceModel(config, model_loader_by_hour, x, y)
     model.initialise()

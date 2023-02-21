@@ -14,3 +14,4 @@ pytest
 flake8
 black
 boto3
+s3fs

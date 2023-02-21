@@ -144,17 +144,22 @@ def check_points_in_multipolygon_multiprocessed(
     return np.asarray(results)
 
 
-def _process_nwp(nwp_slice: xr.Dataset, mask: xr.DataArray) -> Tuple[xr.Dataset, xr.Dataset]:
-    """Processing logic for NWP region-based filtering and averaging.
+def _process_nwp(
+    nwp_slice: xr.Dataset, mask: xr.DataArray, x_coord: str = "x", y_coord: str = "y"
+) -> Tuple[xr.Dataset, xr.Dataset]:
+    """Processing logic for region masked downsampling
 
     Args:
-        nwp_slice (xr.Dataset): Subset of NWP dataset
+        nwp_slice (xr.Dataset): slice of NWP data
+        mask (xr.DataArray): geospatial mask of nan/non-nan values
+        x_coord (str, optional): coordinate name of x dimension in NWP dataset. Defaults to "x".
+        y_coord (str, optional): coordinate name of y dimension in NWP dataset. Defaults to "y".
 
     Returns:
-        xr.Dataset: within-UK and outer-UK geospatial average.
+        Tuple[xr.Dataset, xr.Dataset]: _description_
     """
-    uk_region = xr.where(~mask.isnull(), nwp_slice, np.nan).mean(dim=["x", "y"])
-    outer_region = xr.where(mask.isnull(), nwp_slice, np.nan).mean(dim=["x", "y"])
+    uk_region = xr.where(~mask.isnull(), nwp_slice, np.nan).mean(dim=[x_coord, y_coord])
+    outer_region = xr.where(mask.isnull(), nwp_slice, np.nan).mean(dim=[x_coord, y_coord])
 
     return uk_region, outer_region
 

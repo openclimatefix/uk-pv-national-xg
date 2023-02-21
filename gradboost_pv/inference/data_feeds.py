@@ -1,13 +1,117 @@
 """Datafeeds for model inference"""
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator, Union
+from typing import Iterator, Optional, Union
 
 import numpy as np
+import s3fs
 import xarray as xr
-from ocf_datapipes.production.xgnational import xgnational_production
+from ocf_datapipes.config.load import load_yaml_configuration
+from ocf_datapipes.config.model import Configuration
+from ocf_datapipes.load import OpenGSPFromDatabase
 from torchdata.datapipes import functional_datapipe
 from torchdata.datapipes.iter import IterDataPipe
+
+from gradboost_pv.models.utils import load_nwp_coordinates
+
+
+# TODO - fix interpolation of data points and move to datapipes?
+@functional_datapipe("production_open_nwp_netcdf")
+class ProductionOpenNWPNetcdfIterDataPipe(IterDataPipe):
+    """Datapipe for accessing the latest netcdf NWP file from s3."""
+
+    def __init__(
+        self,
+        s3_path_to_data: Path,
+        s3_access_key: Optional[str] = None,
+        s3_ssecret_key: Optional[str] = None,
+    ) -> None:
+        """Initalise Datapipe with s3 path and optional s3 keys.
+
+        Args:
+            s3_path_to_data (Path): path to s3 file, does not require s3:// prefix
+            s3_access_key (Optional[str], optional): Optional access key. Defaults to None.
+            s3_ssecret_key (Optional[str], optional): Optional secret key. Defaults to None.
+        """
+        self.s3_path_to_data = s3_path_to_data
+        if s3_access_key is not None and s3_ssecret_key is not None:
+            self.fs = s3fs.S3FileSystem(key=s3_access_key, secret=s3_ssecret_key)
+        else:
+            self.fs = s3fs.S3FileSystem()
+
+    def _process_nwp_from_netcdf(self, nwp: xr.Dataset) -> xr.Dataset:
+        """Processes the NWP data in the same fashion as 'open_nwp' method
+
+        Processes netcdf file to the same NWP format as datapipes processing.
+        Args:
+            nwp (xr.Dataset): NWP data loaded from prod s3
+
+        Returns:
+            xr.Dataset: Processed NWP data, with only the latest time slice.
+        """
+        nwp = nwp.transpose("init_time", "step", "variable", "y", "x")
+        nwp = nwp.rename(
+            {"init_time": "init_time_utc", "variable": "channel", "y": "y_osgb", "x": "x_osgb"}
+        )
+
+        # select most recent time point
+        nwp = nwp.isel(init_time_utc=-1)
+
+        # TODO - create a fix for this
+        # prod data is y: 633, x: 449, training data was y: 704, x: 548, interpolate onto
+        # the old coordinates.
+        x_coords, y_coords = load_nwp_coordinates()
+
+        # there is some bug with extrapolation/interpolation - see below
+        # https://github.com/pydata/xarray/discussions/6189
+        # nwp = nwp.interp(
+        #     x_osgb=x_coords,
+        #     y_osgb=y_coords,
+        #     method="linear",
+        #     kwargs={"fill_value": "extrapolation"},  # TODO - fix this!
+        # )
+
+        # quickest workaround, not production ready!!!!!
+        nwp = nwp.reindex({"x_osgb": x_coords, "y_osgb": y_coords}, method="nearest")
+
+        return nwp
+
+    def __iter__(self) -> Iterator[xr.Dataset]:
+        """Yields the latest NWP data from s3."""
+        while True:
+            # with self.fs.open(self.s3_path_to_data) as file_obj:
+            #     nwp = xr.open_dataset(file_obj, engine="h5netcdf")
+            #     nwp = self._process_nwp_from_netcdf(nwp)
+            #     yield nwp
+            nwp = xr.open_dataset(self.fs.open(self.s3_path_to_data), engine="h5netcdf")
+            nwp = self._process_nwp_from_netcdf(nwp)
+            yield nwp
+
+
+# TODO - move to datapipes? or remove other function from datapipes
+def xgnational_production(configuration_filename: Union[Path, str]) -> dict:
+    """
+    Create the National XG Boost  using a configuration
+    Args:
+        configuration_filename: Name of the configuration
+    Returns:
+        dictionary of 'nwp' and 'gsp' containing xarray for both
+    """
+
+    configuration: Configuration = load_yaml_configuration(filename=configuration_filename)
+
+    nwp_datapipe = ProductionOpenNWPNetcdfIterDataPipe(configuration.input_data.nwp.nwp_zarr_path)
+    gsp_datapipe = OpenGSPFromDatabase(
+        history_minutes=configuration.input_data.gsp.history_minutes,
+        interpolate_minutes=configuration.input_data.gsp.live_interpolate_minutes,
+        load_extra_minutes=configuration.input_data.gsp.live_load_extra_minutes,
+        national_only=True,
+    )
+
+    nwp_xr = next(iter(nwp_datapipe))
+    gsp_xr = next(iter(gsp_datapipe))
+
+    return {"nwp": nwp_xr, "gsp": gsp_xr}
 
 
 @dataclass
