@@ -263,6 +263,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
             uk_polygon = process_eso_uk_multipolygon(uk_polygon)
             mask = generate_polygon_mask(self.nwp_x_coords, self.nwp_y_coords, uk_polygon)
 
+        self.logger.debug("Making mask for NWP data")
         mask = xr.DataArray(
             np.tile(
                 mask.T,
@@ -280,6 +281,8 @@ class NationalBoostInferenceModel(BaseInferenceModel):
                 self._config.y_coord_name,
             ],
         )
+
+        self.logger.debug("Making mask for NWP data:done")
         return mask
 
     def check_incoming_data(self, data: DataInput) -> None:
