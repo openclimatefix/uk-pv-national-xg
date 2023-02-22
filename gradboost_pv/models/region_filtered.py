@@ -1,4 +1,5 @@
 """Model using geospatial masking"""
+from pathlib import Path
 from typing import Tuple
 
 import numpy as np
@@ -7,52 +8,37 @@ import xarray as xr
 from ocf_datapipes.utils.utils import trigonometric_datetime_transformation
 
 from gradboost_pv.models.utils import (
+    DEFAULT_DIRECTORY_TO_PROCESSED_NWP,
     TRIG_DATETIME_FEATURE_NAMES,
     build_lagged_features,
     build_solar_pv_features,
 )
-from gradboost_pv.preprocessing.region_filtered import DEFAULT_VARIABLES_FOR_PROCESSING
-
-
-def build_local_save_path(
-    path_to_dir: str, forecast_horizon: int, variable: str, year: int
-) -> Tuple[str, str]:
-    """Path to save processed NWP data locally
-
-    Args:
-        path_to_dir (str): base_path
-        forecast_horizon (int):
-        variable (str):
-        year (int):
-
-    Returns:
-        Tuple[str, str]: filepaths for inner and outer masked data
-    """
-    return (
-        f"{path_to_dir}/{year}"
-        f"/uk_region_inner_variable_{variable}_step_{forecast_horizon}.pickle",
-        f"{path_to_dir}/{year}"
-        f"/uk_region_outer_variable_{variable}_step_{forecast_horizon}.pickle",
-    )
+from gradboost_pv.preprocessing.region_filtered import (
+    DEFAULT_VARIABLES_FOR_PROCESSING,
+    build_local_save_path,
+)
 
 
 def load_local_preprocessed_slice(
-    base_path: str, variable: str, forecast_horizon_step: int, year: int
+    forecast_horizon_step: int,
+    variable: str,
+    year: int,
+    directory: Path = DEFAULT_DIRECTORY_TO_PROCESSED_NWP,
 ) -> pd.DataFrame:
     """Loads locally preprocessed NWP data from file"""
 
     inner_fpath, outer_fpath = build_local_save_path(
-        base_path, forecast_horizon_step, variable, year
+        forecast_horizon_step, variable, year, directory
     )
 
     return pd.concat([pd.read_pickle(inner_fpath), pd.read_pickle(outer_fpath)], axis=1)
 
 
 def load_all_variable_slices(
-    path: str,
     forecast_horizon_step: int,
     variables: list[str] = DEFAULT_VARIABLES_FOR_PROCESSING,
     years: list[int] = [2020, 2021],
+    directory: Path = DEFAULT_DIRECTORY_TO_PROCESSED_NWP,
 ) -> pd.DataFrame:
     """Load all preprocessed NWP from file for specific forecast horizon"""
     X = list()
@@ -60,9 +46,7 @@ def load_all_variable_slices(
         var_data = list()
         for year in years:
             var_data.append(
-                load_local_preprocessed_slice(
-                    path, variable, forecast_horizon_step, year
-                )
+                load_local_preprocessed_slice(forecast_horizon_step, variable, year, directory)
             )
 
         X.append(pd.concat(var_data, axis=0).sort_index(ascending=False))
@@ -111,11 +95,7 @@ def build_datasets_from_local(
         gsp.index.shift(freq=forecast_horizon).sort_values(ascending=False).values
     )
     _X = pd.DataFrame(_X, index=gsp.index, columns=TRIG_DATETIME_FEATURE_NAMES)
-    X = (
-        pd.concat([processed_nwp_slice, X_diff, _X], axis=1)
-        .sort_index(ascending=False)
-        .dropna()
-    )
+    X = pd.concat([processed_nwp_slice, X_diff, _X], axis=1).sort_index(ascending=False).dropna()
 
     solar_variables = build_solar_pv_features(
         gsp.index.shift(freq=forecast_horizon).sort_values(ascending=False)
@@ -145,9 +125,7 @@ def build_datasets_from_local(
         # use random noise as a benchmark for uninformative features
         # used only in model analysis/benchmarking ONLY
 
-        noise = pd.DataFrame(
-            columns=["RANDOM_NOISE"], data=np.random.randn(len(X)), index=X.index
-        )
+        noise = pd.DataFrame(columns=["RANDOM_NOISE"], data=np.random.randn(len(X)), index=X.index)
 
         X = pd.concat([X, noise], axis=1)
 

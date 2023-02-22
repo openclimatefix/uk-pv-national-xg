@@ -173,3 +173,8 @@ class NationalBoostModelInference(IterDataPipe):
             for data in self.data_feed:
                 prediction: Dict[Hour, Prediction] = self.model(data)
                 conn.write(prediction)
+
+                # TODO would it be simpiler here just collect the results into a
+                #  dataframe and returning it
+                # Then we dont have to worry about pickling or saving the results.
+                # Or have an option to save the results to a database

@@ -2,12 +2,18 @@
 import datetime as dt
 import itertools
 from argparse import ArgumentParser
+from pathlib import Path
 
 import pandas as pd
 import xarray as xr
 
 from gradboost_pv.models.region_filtered import build_local_save_path
-from gradboost_pv.models.utils import GSP_FPATH, NWP_FPATH, NWP_STEP_HORIZON
+from gradboost_pv.models.utils import (
+    DEFAULT_DIRECTORY_TO_PROCESSED_NWP,
+    GSP_FPATH,
+    NWP_FPATH,
+    NWP_STEP_HORIZON,
+)
 from gradboost_pv.preprocessing.region_filtered import (
     DEFAULT_VARIABLES_FOR_PROCESSING,
     NWPUKRegionMaskedDatasetBuilder,
@@ -30,18 +36,19 @@ def parse_args():
         description="Script to bulk process NWP xarray data for later use in simple ML model."
     )
     parser.add_argument(
-        "--save_dir", type=str, required=True, help="Directory to save collated data."
+        "--save_dir",
+        type=Path,
+        default=DEFAULT_DIRECTORY_TO_PROCESSED_NWP,
+        help="Directory to save collated data.",
     )
     args = parser.parse_args()
     return args
 
 
-def main():
+def main(base_save_directory: Path):
     """
     Script to preprocess NWP data, overnight
     """
-
-    args = parse_args()
 
     gsp = xr.open_zarr(GSP_FPATH)
     nwp = xr.open_zarr(NWP_FPATH)
@@ -74,16 +81,12 @@ def main():
             evaluation_timeseries,
         )
 
-        iter_params = list(
-            itertools.product(DEFAULT_VARIABLES_FOR_PROCESSING, FORECAST_HORIZONS)
-        )
+        iter_params = list(itertools.product(DEFAULT_VARIABLES_FOR_PROCESSING, FORECAST_HORIZONS))
         for var, step in iter_params:
-            uk_region, outer_region = dataset_builder.build_region_masked_covariates(
-                var, step
-            )
+            uk_region, outer_region = dataset_builder.build_region_masked_covariates(var, step)
 
             inner_fpath, outer_fpath = build_local_save_path(
-                f"{args.save_dir}/{year}", step, var, year
+                step, var, year, directory=base_save_directory
             )
 
             uk_region.to_pickle(inner_fpath)
@@ -96,4 +99,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    args = parse_args()
+    main(args.save_dir)

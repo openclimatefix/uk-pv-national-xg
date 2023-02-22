@@ -1,0 +1,238 @@
+{
+    "metadata": {
+        ".zattrs": {
+            "coordinates": "init_time_utc"
+        },
+        ".zgroup": {
+            "zarr_format": 2
+        },
+        "UKV/.zarray": {
+            "chunks": [
+                3,
+                3,
+                176,
+                137
+            ],
+            "compressor": {
+                "blocksize": 0,
+                "clevel": 5,
+                "cname": "lz4",
+                "id": "blosc",
+                "shuffle": 1
+            },
+            "dtype": "<f8",
+            "fill_value": "NaN",
+            "filters": null,
+            "order": "C",
+            "shape": [
+                10,
+                11,
+                704,
+                548
+            ],
+            "zarr_format": 2
+        },
+        "UKV/.zattrs": {
+            "Conventions": "CF-1.7",
+            "GRIB_centre": "egrr",
+            "GRIB_centreDescription": "U.K. Met Office - Exeter",
+            "GRIB_edition": 2,
+            "GRIB_subCentre": 5,
+            "_ARRAY_DIMENSIONS": [
+                "step",
+                "channel",
+                "y_osgb",
+                "x_osgb"
+            ],
+            "coordinates": "latitude longitude",
+            "institution": "U.K. Met Office - Exeter"
+        },
+        "channel/.zarray": {
+            "chunks": [
+                11
+            ],
+            "compressor": {
+                "blocksize": 0,
+                "clevel": 5,
+                "cname": "lz4",
+                "id": "blosc",
+                "shuffle": 1
+            },
+            "dtype": "|O",
+            "fill_value": null,
+            "filters": [
+                {
+                    "id": "vlen-utf8"
+                }
+            ],
+            "order": "C",
+            "shape": [
+                11
+            ],
+            "zarr_format": 2
+        },
+        "channel/.zattrs": {
+            "_ARRAY_DIMENSIONS": [
+                "channel"
+            ]
+        },
+        "init_time_utc/.zarray": {
+            "chunks": [],
+            "compressor": null,
+            "dtype": "<i8",
+            "fill_value": null,
+            "filters": null,
+            "order": "C",
+            "shape": [],
+            "zarr_format": 2
+        },
+        "init_time_utc/.zattrs": {
+            "_ARRAY_DIMENSIONS": [],
+            "calendar": "proleptic_gregorian",
+            "long_name": "initial time of forecast",
+            "standard_name": "forecast_reference_time",
+            "units": "seconds since 1970-01-01"
+        },
+        "latitude/.zarray": {
+            "chunks": [
+                176,
+                274
+            ],
+            "compressor": {
+                "blocksize": 0,
+                "clevel": 5,
+                "cname": "lz4",
+                "id": "blosc",
+                "shuffle": 1
+            },
+            "dtype": "<f8",
+            "fill_value": "NaN",
+            "filters": null,
+            "order": "C",
+            "shape": [
+                704,
+                548
+            ],
+            "zarr_format": 2
+        },
+        "latitude/.zattrs": {
+            "_ARRAY_DIMENSIONS": [
+                "y_osgb",
+                "x_osgb"
+            ],
+            "long_name": "latitude",
+            "standard_name": "latitude",
+            "units": "degrees_north"
+        },
+        "longitude/.zarray": {
+            "chunks": [
+                176,
+                274
+            ],
+            "compressor": {
+                "blocksize": 0,
+                "clevel": 5,
+                "cname": "lz4",
+                "id": "blosc",
+                "shuffle": 1
+            },
+            "dtype": "<f8",
+            "fill_value": "NaN",
+            "filters": null,
+            "order": "C",
+            "shape": [
+                704,
+                548
+            ],
+            "zarr_format": 2
+        },
+        "longitude/.zattrs": {
+            "_ARRAY_DIMENSIONS": [
+                "y_osgb",
+                "x_osgb"
+            ],
+            "long_name": "longitude",
+            "standard_name": "longitude",
+            "units": "degrees_east"
+        },
+        "step/.zarray": {
+            "chunks": [
+                10
+            ],
+            "compressor": {
+                "blocksize": 0,
+                "clevel": 5,
+                "cname": "lz4",
+                "id": "blosc",
+                "shuffle": 1
+            },
+            "dtype": "<f8",
+            "fill_value": "NaN",
+            "filters": null,
+            "order": "C",
+            "shape": [
+                10
+            ],
+            "zarr_format": 2
+        },
+        "step/.zattrs": {
+            "_ARRAY_DIMENSIONS": [
+                "step"
+            ],
+            "long_name": "time since forecast_reference_time",
+            "standard_name": "forecast_period",
+            "units": "hours"
+        },
+        "x_osgb/.zarray": {
+            "chunks": [
+                548
+            ],
+            "compressor": {
+                "blocksize": 0,
+                "clevel": 5,
+                "cname": "lz4",
+                "id": "blosc",
+                "shuffle": 1
+            },
+            "dtype": "<i4",
+            "fill_value": null,
+            "filters": null,
+            "order": "C",
+            "shape": [
+                548
+            ],
+            "zarr_format": 2
+        },
+        "x_osgb/.zattrs": {
+            "_ARRAY_DIMENSIONS": [
+                "x_osgb"
+            ]
+        },
+        "y_osgb/.zarray": {
+            "chunks": [
+                704
+            ],
+            "compressor": {
+                "blocksize": 0,
+                "clevel": 5,
+                "cname": "lz4",
+                "id": "blosc",
+                "shuffle": 1
+            },
+            "dtype": "<i4",
+            "fill_value": null,
+            "filters": null,
+            "order": "C",
+            "shape": [
+                704
+            ],
+            "zarr_format": 2
+        },
+        "y_osgb/.zattrs": {
+            "_ARRAY_DIMENSIONS": [
+                "y_osgb"
+            ]
+        }
+    },
+    "zarr_consolidated_format": 1
+}

@@ -1,4 +1,5 @@
 """Model built from pre-trained CNN passthrough"""
+from pathlib import Path
 from typing import Tuple
 
 import numpy as np
@@ -7,19 +8,29 @@ import xarray as xr
 from ocf_datapipes.utils.utils import trigonometric_datetime_transformation
 
 from gradboost_pv.models.utils import (
+    DEFAULT_DIRECTORY_TO_PROCESSED_NWP,
     TRIG_DATETIME_FEATURE_NAMES,
     build_rolling_linear_regression_betas,
 )
+from gradboost_pv.preprocessing.pretrained import build_local_save_path
 
 AUTO_REGRESSION_TARGET_LAG = np.timedelta64(1, "h")  # to avoid look ahead bias
 AUTO_REGRESSION_COVARIATE_LAG = AUTO_REGRESSION_TARGET_LAG + np.timedelta64(1, "h")
 
 
-def load_local_preprocessed_slice(forecast_horizon_step: int) -> pd.DataFrame:
-    """TODO - remove"""
-    return pd.read_pickle(
-        f"/home/tom/local_data/pretrained_nwp_processing_step_{forecast_horizon_step}.pkl"
-    )
+def load_local_preprocessed_slice(
+    forecast_horizon_step: int, directory: Path = DEFAULT_DIRECTORY_TO_PROCESSED_NWP
+) -> pd.DataFrame:
+    """Load local processed NWP data from path
+
+    Args:
+        forecast_horizon_step (int): Forecast step slice of NWP data
+        directory (Path, optional): Path to data. Defaults to DEFAULT_DIRECTORY_TO_PROCESSED_NWP.
+
+    Returns:
+        pd.DataFrame: Processed NWP data.
+    """
+    return pd.read_pickle(build_local_save_path(forecast_horizon_step, directory))
 
 
 def build_datasets_from_local(
@@ -61,9 +72,7 @@ def build_datasets_from_local(
     y = gsp.shift(freq=-forecast_horizon).dropna()
 
     # add datetime methods for the point at which we are forecasting e.g. now + step
-    _X = trigonometric_datetime_transformation(
-        y.shift(freq=forecast_horizon).index.values
-    )
+    _X = trigonometric_datetime_transformation(y.shift(freq=forecast_horizon).index.values)
     _X = pd.DataFrame(_X, index=y.index, columns=TRIG_DATETIME_FEATURE_NAMES)
     X = pd.concat([X, _X], axis=1)
 

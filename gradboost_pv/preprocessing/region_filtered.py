@@ -1,6 +1,7 @@
 """Preprocess NWP data using geospatial mask"""
 import itertools
 import multiprocessing as mp
+from pathlib import Path
 from typing import Iterable, Tuple, Union
 
 import geopandas as gpd
@@ -10,6 +11,8 @@ import requests
 import xarray as xr
 from shapely.geometry import MultiPolygon, Point, Polygon
 from shapely.ops import unary_union
+
+from gradboost_pv.models.utils import DEFAULT_DIRECTORY_TO_PROCESSED_NWP
 
 ESO_GEO_JSON_URL = (
     "https://data.nationalgrideso.com/backend/dataset/2810092e-d4b2-472f-b955-d8bea01f9ec0/"
@@ -25,6 +28,34 @@ DEFAULT_VARIABLES_FOR_PROCESSING = [
     "sde",
     "wdir10",
 ]
+
+
+def build_local_save_path(
+    forecast_horizon_step: int,
+    variable: str,
+    year: int,
+    directory: Path = DEFAULT_DIRECTORY_TO_PROCESSED_NWP,
+) -> Tuple[Path, Path]:
+    """Paths to inner and outer masked NWP data for specific year/variable/forecast horizon
+
+    Args:
+        forecast_horizon_step (int): Forecast step index
+        variable (str): NWP variable
+        year (int): Year of processed data
+        directory (Path, optional): Directory to data.
+        Defaults to DEFAULT_DIRECTORY_TO_PROCESSED_NWP.
+
+    Returns:
+        Tuple[Path, Path]: Paths to respective datasets
+    """
+    return (
+        directory
+        / str(year)
+        / f"uk_region_inner_variable_{variable}_step_{forecast_horizon_step}.pickle",
+        directory
+        / str(year)
+        / f"uk_region_outer_variable_{variable}_step_{forecast_horizon_step}.pickle",
+    )
 
 
 def query_eso_geojson() -> gpd.GeoDataFrame:
@@ -113,17 +144,22 @@ def check_points_in_multipolygon_multiprocessed(
     return np.asarray(results)
 
 
-def _process_nwp(nwp_slice: xr.Dataset, mask: xr.DataArray) -> Tuple[xr.Dataset, xr.Dataset]:
-    """Processing logic for NWP region-based filtering and averaging.
+def _process_nwp(
+    nwp_slice: xr.Dataset, mask: xr.DataArray, x_coord: str = "x", y_coord: str = "y"
+) -> Tuple[xr.Dataset, xr.Dataset]:
+    """Processing logic for region masked downsampling
 
     Args:
-        nwp_slice (xr.Dataset): Subset of NWP dataset
+        nwp_slice (xr.Dataset): slice of NWP data
+        mask (xr.DataArray): geospatial mask of nan/non-nan values
+        x_coord (str, optional): coordinate name of x dimension in NWP dataset. Defaults to "x".
+        y_coord (str, optional): coordinate name of y dimension in NWP dataset. Defaults to "y".
 
     Returns:
-        xr.Dataset: within-UK and outer-UK geospatial average.
+        Tuple[xr.Dataset, xr.Dataset]: _description_
     """
-    uk_region = xr.where(~mask.isnull(), nwp_slice, np.nan).mean(dim=["x", "y"])
-    outer_region = xr.where(mask.isnull(), nwp_slice, np.nan).mean(dim=["x", "y"])
+    uk_region = xr.where(~mask.isnull(), nwp_slice, np.nan).mean(dim=[x_coord, y_coord])
+    outer_region = xr.where(mask.isnull(), nwp_slice, np.nan).mean(dim=[x_coord, y_coord])
 
     return uk_region, outer_region
 

@@ -1,7 +1,7 @@
 """Script to simulate data read, model inference and prediction write"""
 from argparse import ArgumentParser
 from pathlib import Path
-from typing import Tuple
+from typing import Callable, Tuple
 
 import numpy as np
 import xarray as xr
@@ -10,6 +10,7 @@ from xgboost import XGBRegressor
 from gradboost_pv.inference.data_feeds import MockDataFeed
 from gradboost_pv.inference.models import Hour, NationalBoostInferenceModel, NationalPVModelConfig
 from gradboost_pv.inference.run import MockDatabaseConnection, NationalBoostModelInference
+from gradboost_pv.models.s3 import build_object_name, create_s3_client, load_model
 from gradboost_pv.models.utils import GSP_FPATH, NWP_FPATH, load_nwp_coordinates
 
 MOCK_DATE_RANGE = slice(np.datetime64("2020-08-02T00:00:00"), np.datetime64("2020-08-04T00:00:00"))
@@ -29,28 +30,18 @@ def parse_args():
     )
     parser.add_argument(
         "--path_to_database",
-        type=str,
+        type=Path,
         required=False,
         default=DEFAULT_PATH_TO_MOCK_DATABASE,
     )
+    parser.add_argument(
+        "--s3_access_key", type=str, required=False, default=None, help="s3 API Access Key"
+    )
+    parser.add_argument(
+        "--s3_secret_key", type=str, required=False, default=None, help="s3 API Secret Key"
+    )
     args = parser.parse_args()
     return args
-
-
-def load_model_from_local(forecast_hour_ahead: Hour) -> XGBRegressor:
-    """TODO - Temporary Model Loader, given an hour (int) return the corresponding XGBoost model.
-
-    Args:
-        forecast_hour_ahead (Hour): Hour ahead you wish to forecast
-
-    Returns:
-        XGBRegressor: Forecast model
-    """
-    _model = XGBRegressor()
-    _model.load_model(
-        f"/home/tom/dev/gradboost_pv/data/uk_region_model_step_{forecast_hour_ahead}.model"
-    )
-    return _model
 
 
 def load_nwp() -> xr.Dataset:
@@ -89,11 +80,12 @@ def create_date_range_slice(
     return nwp.sel(init_time=datetime_range), gsp.sel(datetime_gmt=datetime_range)
 
 
-def main(path_to_database: Path):
+def main(path_to_database: Path, model_loader_by_hour: Callable[[Hour], XGBRegressor]):
     """Run mock inference of a NationalBoost Model.
 
     Args:
         path_to_database (Path): Path for mock local database.
+        model_loader_by_hour (Callable[[Hour], XGBRegressor]): Function for loading model by step
     """
     # load data to feed into mock data feed
     nwp, gsp = load_nwp(), load_gsp()
@@ -104,8 +96,18 @@ def main(path_to_database: Path):
 
     # load in our national pv model
     x, y = load_nwp_coordinates()
-    config = NationalPVModelConfig("mock_inference", overwrite_read_datetime_at_inference=False)
-    model = NationalBoostInferenceModel(config, load_model_from_local, x, y)
+    config = NationalPVModelConfig(
+        "mock_inference",
+        overwrite_read_datetime_at_inference=False,
+        time_variable_name="init_time",
+        nwp_variable_name="variable",
+        x_coord_name="x",
+        y_coord_name="y",
+        gsp_time_variable_name="datetime_gmt",
+        gsp_pv_generation_name="generation_mw",
+        gsp_installed_capacity_name="installedcapacity_mwp",
+    )
+    model = NationalBoostInferenceModel(config, model_loader_by_hour, x, y)
     model.initialise()
 
     # create a mock database to write to
@@ -122,4 +124,14 @@ def main(path_to_database: Path):
 
 if __name__ == "__main__":
     args = parse_args()
-    main(args.path_to_database)
+
+    if args.s3_access_key is None or args.s3_secret_key is None:
+        client = create_s3_client()
+    else:
+        client = create_s3_client(args.s3_access_key, args.s3_secret_key)
+
+    def load_model_by_hour(hour: Hour):
+        """Wrapper function for s3 client."""
+        return load_model(client, build_object_name(hour))
+
+    main(args.path_to_database, load_model_by_hour)

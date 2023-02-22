@@ -1,5 +1,6 @@
 """Process NWP data with pretrained model"""
 from math import ceil, floor
+from pathlib import Path
 from typing import Callable, Iterable, Iterator, Optional, Tuple
 
 import numpy as np
@@ -9,11 +10,26 @@ import xarray as xr
 from torchdata.datapipes import functional_datapipe
 from torchdata.datapipes.iter import IterDataPipe
 
-from gradboost_pv.models.utils import NWP_VARIABLE_NUM
+from gradboost_pv.models.utils import DEFAULT_DIRECTORY_TO_PROCESSED_NWP, NWP_VARIABLE_NUM
 
 AUTO_REGRESSION_TARGET_LAG = np.timedelta64(1, "h")  # to avoid look ahead bias
 AUTO_REGRESSION_COVARIATE_LAG = AUTO_REGRESSION_TARGET_LAG + np.timedelta64(1, "h")
 PRETRAINED_OUTPUT_DIMS = 1_000
+
+
+def build_local_save_path(
+    forecast_horizon_step: int, directory: Path = DEFAULT_DIRECTORY_TO_PROCESSED_NWP
+) -> Path:
+    """Builds filepath based on the forecast horizon
+
+    Args:
+        directory (Path): Path to data. Defaults to DEFAULT_DIRECTORY_TO_PROCESSED_NWP.
+        forecast_horizon_step (int): Forecast step slice of processed NWP data
+
+    Returns:
+        Path: Filepath
+    """
+    return directory / f"pretrained_nwp_processed_step_{forecast_horizon_step}.pickle"
 
 
 @functional_datapipe("process_nwp_pretrained")
@@ -42,9 +58,7 @@ class ProcessNWPPretrainedIterDataPipe(IterDataPipe):
         """
 
         if interpolate:
-            assert (
-                interpolation_timepoints is not None
-            ), "Must provide points for interpolation."
+            assert interpolation_timepoints is not None, "Must provide points for interpolation."
         self.source_datapipe = base_nwp_datapipe
         self.step = step
         self.pretrained_model = pretrained_model
@@ -64,9 +78,7 @@ class ProcessNWPPretrainedIterDataPipe(IterDataPipe):
         nwp_batch = nwp_batch.to_numpy()
         n = nwp_batch.shape[0]  # batch size for all but the last batch
         nwp_batch = nwp_batch.reshape(NWP_VARIABLE_NUM * n, 64, 68)
-        nwp_batch = np.tile(nwp_batch, (3, 1, 1, 1)).reshape(
-            NWP_VARIABLE_NUM * n, 3, 64, 68
-        )
+        nwp_batch = np.tile(nwp_batch, (3, 1, 1, 1)).reshape(NWP_VARIABLE_NUM * n, 3, 64, 68)
         nwp_batch = torch.from_numpy(np.nan_to_num(nwp_batch))
         return nwp_batch
 
@@ -100,12 +112,8 @@ class ProcessNWPPretrainedIterDataPipe(IterDataPipe):
         for nwp in self.source_datapipe:
             nwp = nwp.isel(step=self.step)  # select the horizon we want
             if self.interpolate:
-                nwp = nwp.interp(
-                    init_time_utc=self.interpolation_timepoints, method="linear"
-                )
-            for batch_idx in range(
-                1, ceil(len(nwp.init_time_utc) / self.batch_size) + 1
-            ):
+                nwp = nwp.interp(init_time_utc=self.interpolation_timepoints, method="linear")
+            for batch_idx in range(1, ceil(len(nwp.init_time_utc) / self.batch_size) + 1):
                 batch = nwp.isel(
                     init_time_utc=slice(
                         self.batch_size * (batch_idx - 1), self.batch_size * batch_idx

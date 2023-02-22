@@ -1,11 +1,19 @@
 """Script to perform quadrant downsampling of NWP data."""
 from argparse import ArgumentParser
+from pathlib import Path
 
-import numpy as np
 import xarray as xr
 
-from gradboost_pv.models.utils import GSP_FPATH, NWP_FPATH, NWP_STEP_HORIZON
-from gradboost_pv.preprocessing.quadrant_downsample import bulk_preprocess_nwp
+from gradboost_pv.models.utils import (
+    DEFAULT_DIRECTORY_TO_PROCESSED_NWP,
+    GSP_FPATH,
+    NWP_FPATH,
+    NWP_STEP_HORIZON,
+)
+from gradboost_pv.preprocessing.quadrant_downsample import (
+    build_local_save_path,
+    bulk_preprocess_nwp,
+)
 from gradboost_pv.utils.logger import getLogger
 
 logger = getLogger("quadrant-process-nwp-data")
@@ -21,23 +29,13 @@ def parse_args():
         description="Script to bulk process NWP xarray data for later use in simple ML model."
     )
     parser.add_argument(
-        "--save_dir", type=str, required=True, help="Directory to save collated data."
+        "--save_dir",
+        type=Path,
+        default=DEFAULT_DIRECTORY_TO_PROCESSED_NWP,
+        help="Directory to save collated data.",
     )
     args = parser.parse_args()
     return args
-
-
-def _build_local_save_path(path_to_dir: str, forecast_horizon: int) -> str:
-    """Builds filepath based on the forecast horizon
-
-    Args:
-        path_to_dir (str): _description_
-        forecast_horizon (int): _description_
-
-    Returns:
-        str: Filepath
-    """
-    return f"{path_to_dir}/quadrant_nwp_processed_step_{forecast_horizon}.npy"
 
 
 def main():
@@ -67,10 +65,9 @@ def main():
             interpolate=True,
             interpolation_points=evaluation_timeseries,
         )
-        np.save(
-            _build_local_save_path(args.save_dir, forecast_horizon),
-            X,
-        )
+
+        X.to_pickle(build_local_save_path(forecast_horizon, args.save_dir))
+
         logger.info(f"Completed processing of data for step: {forecast_horizon}")
 
 

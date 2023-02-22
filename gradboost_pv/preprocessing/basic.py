@@ -1,8 +1,19 @@
 """Basic NWP Preprocessing"""
+from pathlib import Path
 from typing import Optional
 
 import pandas as pd
 import xarray as xr
+
+from gradboost_pv.models.utils import DEFAULT_DIRECTORY_TO_PROCESSED_NWP
+
+
+def build_local_save_path(
+    forecast_horizon_step: int, directory: Path = DEFAULT_DIRECTORY_TO_PROCESSED_NWP
+) -> Path:
+    """Builds save path based on directory and forecast step index."""
+
+    return directory / f"basic_nwp_preprocessed_step_{forecast_horizon_step}.pickle"
 
 
 def _process_nwp(nwp_slice: xr.Dataset) -> xr.Dataset:
@@ -42,9 +53,7 @@ def bulk_preprocess_nwp(
 
     variables = nwp_forecast_step_slice.coords["variable"].values
     time_points = (
-        interpolation_points
-        if interpolate
-        else nwp_forecast_step_slice.coords["init_time"].values
+        interpolation_points if interpolate else nwp_forecast_step_slice.coords["init_time"].values
     )
 
     nwp_forecast_step_slice = _process_nwp(nwp_forecast_step_slice)

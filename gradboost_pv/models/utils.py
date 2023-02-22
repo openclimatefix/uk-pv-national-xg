@@ -9,10 +9,9 @@ from pvlib.location import Location
 NWP_VARIABLE_NUM = 17
 NWP_STEP_HORIZON = 37
 # GCP paths for nwp and gsp data
-NWP_FPATH = (
-    "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV_intermediate_version_3.zarr/"
-)
+NWP_FPATH = "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV_intermediate_version_3.zarr/"
 GSP_FPATH = "gs://solar-pv-nowcasting-data/PV/GSP/v5/pv_gsp.zarr"
+DEFAULT_DIRECTORY_TO_PROCESSED_NWP = Path(__file__).parents[2] / "data"
 
 
 ORDERED_NWP_FEATURE_VARIABLES = [
@@ -48,12 +47,8 @@ TRIG_DATETIME_FEATURE_NAMES = [
 DEFAULT_ROLLING_LR_WINDOW_SIZE = 10
 LATITUDE_UK_SOUTH_CENTER = 52.80111
 LONGITUDE_UK_SOUTH_CENTER = -1.0967
-DEFAULT_UK_SOUTH_LOCATION = Location(
-    LATITUDE_UK_SOUTH_CENTER, LONGITUDE_UK_SOUTH_CENTER
-)
-PATH_TO_LOCAL_NWP_COORDINATES = (
-    Path(__file__).parents[2] / "data" / "nwp_grid_coordinates.npz"
-)
+DEFAULT_UK_SOUTH_LOCATION = Location(LATITUDE_UK_SOUTH_CENTER, LONGITUDE_UK_SOUTH_CENTER)
+PATH_TO_LOCAL_NWP_COORDINATES = Path(__file__).parents[2] / "data" / "nwp_grid_coordinates.npz"
 
 
 def save_nwp_coordinates(x: np.ndarray, y: np.ndarray):
@@ -160,9 +155,7 @@ def build_solar_pv_features(
     return solar_variables
 
 
-def build_lagged_features(
-    gsp: pd.DataFrame, forecast_horizon: np.timedelta64
-) -> pd.DataFrame:
+def build_lagged_features(gsp: pd.DataFrame, forecast_horizon: np.timedelta64) -> pd.DataFrame:
     """Builds AR lagged features using the most recent day's information.
 
     Builds 1HR, 2HR and 1DAY lagged features for the most recent data of the same
@@ -186,15 +179,11 @@ def build_lagged_features(
     )
 
     ar_2_hour_lag = gsp.shift(
-        freq=np.timedelta64(
-            int(24 - ((NUM_GSP_OBS_BETWEEN_FORECAST / 2 - 2) % 24)), "h"
-        )
+        freq=np.timedelta64(int(24 - ((NUM_GSP_OBS_BETWEEN_FORECAST / 2 - 2) % 24)), "h")
     )
 
     ar_1_hour_lag = gsp.shift(
-        freq=np.timedelta64(
-            int(24 - ((NUM_GSP_OBS_BETWEEN_FORECAST / 2 - 1) % 24)), "h"
-        )
+        freq=np.timedelta64(int(24 - ((NUM_GSP_OBS_BETWEEN_FORECAST / 2 - 1) % 24)), "h")
     )
 
     pv_autoregressive_lags = (

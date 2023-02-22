@@ -1,4 +1,5 @@
 """Basic Model with single point downsampling"""
+from pathlib import Path
 from typing import Tuple
 
 import numpy as np
@@ -6,14 +7,27 @@ import pandas as pd
 import xarray as xr
 from ocf_datapipes.utils.utils import trigonometric_datetime_transformation
 
-from gradboost_pv.models.utils import TRIG_DATETIME_FEATURE_NAMES, build_lagged_features
+from gradboost_pv.models.utils import (
+    DEFAULT_DIRECTORY_TO_PROCESSED_NWP,
+    TRIG_DATETIME_FEATURE_NAMES,
+    build_lagged_features,
+)
+from gradboost_pv.preprocessing.basic import build_local_save_path
 
 
-def load_local_preprocessed_slice(forecast_horizon_step: int) -> pd.DataFrame:
-    """TODO - remove"""
-    return pd.read_pickle(
-        f"/home/tom/local_data/basic_processed_nwp_data_step_{forecast_horizon_step}.pickle"
-    )
+def load_local_preprocessed_slice(
+    forecast_horizon_step: int, directory: Path = DEFAULT_DIRECTORY_TO_PROCESSED_NWP
+) -> pd.DataFrame:
+    """Load local processed NWP data from path
+
+    Args:
+        forecast_horizon_step (int): Forecast step slice of NWP data
+        directory (Path, optional): Path to data. Defaults to DEFAULT_DIRECTORY_TO_PROCESSED_NWP.
+
+    Returns:
+        pd.DataFrame: Processed NWP data.
+    """
+    return pd.read_pickle(build_local_save_path(forecast_horizon_step, directory))
 
 
 def build_datasets_from_local(

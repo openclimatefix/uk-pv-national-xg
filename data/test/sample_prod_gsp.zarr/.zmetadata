@@ -1,0 +1,168 @@
+{
+    "metadata": {
+        ".zattrs": {},
+        ".zgroup": {
+            "zarr_format": 2
+        },
+        "capacity_megawatt_power/.zarray": {
+            "chunks": [
+                49,
+                1
+            ],
+            "compressor": {
+                "blocksize": 0,
+                "clevel": 5,
+                "cname": "lz4",
+                "id": "blosc",
+                "shuffle": 1
+            },
+            "dtype": "<f4",
+            "fill_value": "NaN",
+            "filters": null,
+            "order": "C",
+            "shape": [
+                49,
+                1
+            ],
+            "zarr_format": 2
+        },
+        "capacity_megawatt_power/.zattrs": {
+            "_ARRAY_DIMENSIONS": [
+                "time_utc",
+                "gsp_id"
+            ]
+        },
+        "gsp_id/.zarray": {
+            "chunks": [
+                1
+            ],
+            "compressor": {
+                "blocksize": 0,
+                "clevel": 5,
+                "cname": "lz4",
+                "id": "blosc",
+                "shuffle": 1
+            },
+            "dtype": "<i8",
+            "fill_value": null,
+            "filters": null,
+            "order": "C",
+            "shape": [
+                1
+            ],
+            "zarr_format": 2
+        },
+        "gsp_id/.zattrs": {
+            "_ARRAY_DIMENSIONS": [
+                "gsp_id"
+            ]
+        },
+        "gsp_pv_power_mw/.zarray": {
+            "chunks": [
+                49,
+                1
+            ],
+            "compressor": {
+                "blocksize": 0,
+                "clevel": 5,
+                "cname": "lz4",
+                "id": "blosc",
+                "shuffle": 1
+            },
+            "dtype": "<f4",
+            "fill_value": "NaN",
+            "filters": null,
+            "order": "C",
+            "shape": [
+                49,
+                1
+            ],
+            "zarr_format": 2
+        },
+        "gsp_pv_power_mw/.zattrs": {
+            "_ARRAY_DIMENSIONS": [
+                "time_utc",
+                "gsp_id"
+            ],
+            "coordinates": "y_osgb capacity_megawatt_power x_osgb"
+        },
+        "time_utc/.zarray": {
+            "chunks": [
+                49
+            ],
+            "compressor": {
+                "blocksize": 0,
+                "clevel": 5,
+                "cname": "lz4",
+                "id": "blosc",
+                "shuffle": 1
+            },
+            "dtype": "<i8",
+            "fill_value": null,
+            "filters": null,
+            "order": "C",
+            "shape": [
+                49
+            ],
+            "zarr_format": 2
+        },
+        "time_utc/.zattrs": {
+            "_ARRAY_DIMENSIONS": [
+                "time_utc"
+            ],
+            "calendar": "proleptic_gregorian",
+            "units": "minutes since 2023-02-20 11:00:00"
+        },
+        "x_osgb/.zarray": {
+            "chunks": [
+                1
+            ],
+            "compressor": {
+                "blocksize": 0,
+                "clevel": 5,
+                "cname": "lz4",
+                "id": "blosc",
+                "shuffle": 1
+            },
+            "dtype": "<f8",
+            "fill_value": "NaN",
+            "filters": null,
+            "order": "C",
+            "shape": [
+                1
+            ],
+            "zarr_format": 2
+        },
+        "x_osgb/.zattrs": {
+            "_ARRAY_DIMENSIONS": [
+                "gsp_id"
+            ]
+        },
+        "y_osgb/.zarray": {
+            "chunks": [
+                1
+            ],
+            "compressor": {
+                "blocksize": 0,
+                "clevel": 5,
+                "cname": "lz4",
+                "id": "blosc",
+                "shuffle": 1
+            },
+            "dtype": "<f8",
+            "fill_value": "NaN",
+            "filters": null,
+            "order": "C",
+            "shape": [
+                1
+            ],
+            "zarr_format": 2
+        },
+        "y_osgb/.zattrs": {
+            "_ARRAY_DIMENSIONS": [
+                "gsp_id"
+            ]
+        }
+    },
+    "zarr_consolidated_format": 1
+}
