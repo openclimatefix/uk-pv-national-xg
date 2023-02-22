@@ -9,11 +9,11 @@ long_description = (this_directory / "README.md").read_text()
 install_requires = (this_directory / "requirements.txt").read_text().splitlines()
 
 setup(
-    name="ocf_datapipes",
-    version="1.0.20",
+    name="gradboost_pv",
+    version="0.0.3",
     license="MIT",
     description="Repository for inference and training of XGBoost based National PV Model.",
-    author="Jacob Bieker, Jack Kelly, Peter Dudfield, Tom Armstrong",
+    author="Tom Armstrong, Peter Dudfield, Tom Armstrong",
     author_email="info@openclimatefix.org",
     company="Open Climate Fix Ltd",
     install_requires=install_requires,

@@ -20,3 +20,16 @@ In addition to methods used for preprocessing and training a model for PV foreca
 - What happens if there is missing data?
 - Where is the model saved?
 - How to run inferences? 
+
+## Workflows
+
+Runs github actions on every push
+
+- lint.yaml: Check linting.
+- test-pytest:yaml: run pytests
+- build-docker.yaml: builds docker file
+
+Runs github actions on push on main
+
+- release-docker.yml: Builds and makes docker image release to dockerhub
+
