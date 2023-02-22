@@ -23,7 +23,7 @@ To run model training, we need to have first pre-processed the NWP data, see abo
 
 The method `gradboost_pv.models.training.run_experiment` will fit the model to the built dataset in addition to returning some training/validation metrics. We trained on all data prior to 2021 and validated on the 2021 subset of data. By model we refer to a single model which forecasts for a single step in the future. The meta-model is an amalgamation (stored internally as a dictionary) of models, keyed by forecast horizon step (one per hour ahead). We train the models for each horizon independently.
 
-The notebook `notebooks/models/geospatial_dsample/uk_region_model.ipynb` demonstrates the full training cycle. One can also train and upload the models using preprocessed data with the script `scripts/models/train/region_filtered_model.py`. For model finetuning, `scripts/models/grid_search_hyperparams.py` will search a parameter space of model configurations and save the results, including the best performing model.
+The notebook `notebooks/models/geospatial_dsample/uk_region_model.ipynb` demonstrates the full training cycle. One can also train and upload the models using preprocessed data with the script `scripts/models/train/region_filtered_model.py`. For model fine-tuning, `scripts/models/grid_search_hyperparams.py` will search a parameter space of model configurations and save the results, including the best performing model.
 
 ## Accessing Current Model
 For access to the current models, they are stored in the s3 bucket: `nowcasting-national-forecaster-models-development` and models are keyed by the forecast hour they refer to. They can also be access via `gradboost_pv.models.s3.load_model`
