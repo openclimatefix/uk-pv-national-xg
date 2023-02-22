@@ -20,6 +20,7 @@ RUN pip install -r app/requirements.txt
 
 # copy library files
 COPY gradboost_pv/ app/gradboost_pv/
+COPY data/ app/data/
 COPY tests/ app/tests/
 
 # change to app folder
