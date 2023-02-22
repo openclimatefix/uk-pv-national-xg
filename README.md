@@ -67,6 +67,7 @@ The model is trained with NWP and GSP National PV data from GCP. There are some 
                 prmsl : Pressure reduce to mean sea level in Pascals.
                 prate : Precipitation rate at the surface in kg/m^2/s.
 ```
+Note that the units/scale of the variables are crucially important for the model, since there is no feature standardization. For example, I believe there is also a snow-depth parameter `sd` which has units `kgm^{-2}`, although the variables are similar they are not one to one mappings. If some variables are going to be swapped in/out, the model will need to be retrained, by changing `gradboost_pv.preprocessing.region_filtered.DEFAULT_VARIABLES_FOR_PROCESSING` for example.
 
 WARNING: Currently the model is running in production with only the variables: `['dswrf', 'lcc', 't']`, this will likely result in model underperformance.
 
@@ -111,6 +112,8 @@ hyperparams = {
 }
 ```
 
+## TODOs
+Issues that should be addressed are marked TODO, I have elaborated further on these points in the issues section.
 
 ## Questions
 
