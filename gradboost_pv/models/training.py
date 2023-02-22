@@ -26,10 +26,10 @@ DEFFAULT_HYPARAM_CONFIG = {
     "learning_rate": 0.005,
     "max_bin": 256,
     "max_cat_threshold": 64,
-    "max_depth": 100,
+    "max_depth": 80,
     "max_leaves": 0,
     "min_child_weight": 5,
-    "n_estimators": 1_500,
+    "n_estimators": 750,
     "n_jobs": -1,
     "num_parallel_tree": 1,
     "predictor": "auto",
@@ -107,9 +107,9 @@ def run_experiment(
     train_mse, test_mse = mean_squared_error(y_train, y_pred_train), mean_squared_error(
         y_test, y_pred_test
     )
-    train_mae, test_mae = mean_absolute_error(
-        y_train, y_pred_train
-    ), mean_absolute_error(y_test, y_pred_test)
+    train_mae, test_mae = mean_absolute_error(y_train, y_pred_train), mean_absolute_error(
+        y_test, y_pred_test
+    )
 
     if save_errors_locally:
         errors_test = pd.DataFrame(
@@ -161,9 +161,7 @@ def plot_loss_metrics(results_by_step: dict[int, ExperimentSummary]):
     for idx, title in enumerate(title_mapping.keys()):
         row = int(idx > 1)
         col = idx % 2
-        data = pd.Series(
-            {step: title_mapping[title](r) for step, r in results_by_step.items()}
-        )
+        data = pd.Series({step: title_mapping[title](r) for step, r in results_by_step.items()})
         axes[row][col].scatter(data.index, data.values)
         axes[row][col].set_title(title)
         axes[row][col].set_xlabel("Forecast Horizon (Hours from init_time_utc)")
@@ -180,16 +178,12 @@ def plot_feature_importances(
     for param_idx, param in enumerate(["weight", "gain"]):
         for idx, fh in enumerate(forecast_horizons):
             data = pd.DataFrame.from_dict(
-                results_by_step[fh]
-                .model.get_booster()
-                .get_score(importance_type=param),
+                results_by_step[fh].model.get_booster().get_score(importance_type=param),
                 orient="index",
             ).sort_values(by=0, ascending=False)
             axes[param_idx][idx].bar(range(len(data)), data.values.flatten())
             axes[param_idx][idx].set_xticks(range(len(data)))
             axes[param_idx][idx].set_xticklabels(data.index, rotation=90)
-            axes[param_idx][idx].set_title(
-                f"Feat. Importance: {param}, Forecast-Horizon: {fh}"
-            )
+            axes[param_idx][idx].set_title(f"Feat. Importance: {param}, Forecast-Horizon: {fh}")
 
     plt.show()
