@@ -41,6 +41,7 @@ logger = getLogger(__name__)
     "--write_to_database",
     is_flag=True,
     default=False,
+    envvar="WRITE_TO_DATABASE",
     help="Set this flag to actually write the results to the database."
     "By default we only print to stdout using mock local database.",
 )
