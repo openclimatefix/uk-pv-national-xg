@@ -40,7 +40,7 @@ logger = getLogger(__name__)
 @click.option(
     "--write_to_database",
     is_flag=True,
-    default=False,
+    default=True,
     envvar="WRITE_TO_DATABASE",
     help="Set this flag to actually write the results to the database."
     "By default we only print to stdout using mock local database.",
@@ -60,7 +60,7 @@ logger = getLogger(__name__)
 def main(
     path_to_model_config: Path,
     path_to_datafeed_config: Path,
-    write_to_database: bool = False,
+    write_to_database: bool = True,
     s3_access_key: Optional[str] = None,
     s3_secret_key: Optional[str] = None,
 ):
