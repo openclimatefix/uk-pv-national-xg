@@ -115,17 +115,6 @@ hyperparams = {
 ## TODOs
 Issues that should be addressed are marked TODO, I have elaborated further on these points in the issues section.
 
-## Questions
-
-- How to run training? What scripts to run
-- Description of the current model
-  - What data does it take in? What NWP channels does it use
-  - What is the pre processing
-  - What ml model is used?
-- What happens if there is missing data?
-- Where is the model saved?
-- How to run inferences? 
-
 ## Workflows
 
 Runs github actions on every push
