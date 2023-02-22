@@ -10,13 +10,13 @@ Repository hosting various models used to predict National PV in the UK using Nu
 In addition to methods used for preprocessing and training a model for PV forecast, we also provide a pipeline for live model inference.
 
 ## NWP Data Preprocessing
-Prior to any model training, we must transform the NWP zarr datasets into something useable by the model. This is done using of the downsampling methods listed above. The production model uses the region-masked downsampling.
+Prior to any model training, we must transform the NWP zarr datasets into something useable by the model. This is done using of the downsampling methods listed above. The production model uses the region-masked downsampling. Note that the downsampling can take quite a long time due to the limitation of loading all data in chunks, and can take on the order of several or more days.
 
 We perform this preprocessing step prior to training rather than in an iterative DataPipes approach since XGBoost does not train well with batched data and instead prefers the full dataset at hand. In addition the downsampling reduces the size of the dataset dramatically, from a 2TB NWP zarr `xarray` dataset to a 35,000 x 34 `Pandas DataFrame`. Loading the preprocessed data from disk significantly speeds up the model training experimentation and development.
 
 To run pre-proccessing for the region-masked model, the script `scripts/processing/uk_region_downsample.py` will take raw data from GCP and produce the processed features. To limit memory usage, the processed features are usually sliced and by year, forecast horizon step and NWP variable. Slicing by year is a common theme in all the preprocessing, since the models for each step are trained independently.
 
-There is already preprocessed data for 2020-2021 on the GCP machine `tom-research.europe-west1-b.solar.pv-nowcasting` in `/home/tom/local_data/uk_region_nwp` which can be copied over and reused. One of the next steps for this model is to preprocess more historic data and fit the model with it - this should work with the given script above, provided the GCP filepath is changed.
+There is already preprocessed data for 2020-2021 on the GCP machine `tom-research.europe-west1-b.solar.pv-nowcasting` in `/home/tom/local_data/uk_region_nwp` which can be copied over and reused. This has also be copied over to GCS, in the bucket `tom-backup-processed-nwp`. One of the next steps for this model is to preprocess more historic data and fit the model with it - this should work with the given script above, provided the GCP filepath is changed.
 
 ## Model Training
 To run model training, we need to have first pre-processed the NWP data, see above for details on that. After pre-processing the data, all downsampling methods in `gradboost_pv.models` have a common `build_dataset_from_local` method, which will parse the processed NWP features in addition to adding extra covariates - such as lagged PV values and PVlib irradiance variables.
