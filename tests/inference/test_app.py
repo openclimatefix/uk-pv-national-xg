@@ -133,7 +133,7 @@ def testing_inference_model(
     return model
 
 
-@pytest.mark.skip('Currently no access to AWS')
+@pytest.mark.skip("Currently no access to AWS")
 def test_inference(testing_inference_model, mock_prod_datafeed, mock_testing_database_connection):
     """Test for model inference pipeline
 
