@@ -46,6 +46,6 @@ required_model_covariates: [
     "elevation",
     "azimuth",
     "equation_of_time"]
-overwrite_read_datetime_at_inference: True
+overwrite_read_datetime_at_inference: False  # True will erase the 30-min rounding
 clip_near_zero_predictions: True
 clip_near_zero_value_percentage: 0.005 
