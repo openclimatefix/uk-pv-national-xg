@@ -1,3 +1,4 @@
+"""Generate s3 client, and model configs for testing"""
 from pathlib import Path
 
 import pytest
