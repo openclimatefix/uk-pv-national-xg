@@ -1,9 +1,11 @@
 """Datafeeds for model inference"""
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Iterator, Optional, Union
 
 import numpy as np
+import pytz
 import s3fs
 import xarray as xr
 from ocf_datapipes.config.load import load_yaml_configuration
@@ -211,6 +213,23 @@ class ProductionDataFeed(IterDataPipe):
         """Datafeed."""
         self.path_to_configuration_file = path_to_configuration_file
 
+    @classmethod
+    def round_up_nearest_thirty_minutes(cls, datetime_utc: datetime) -> np.datetime64:
+        """Round a UTC datetime to the nearest 1/2 hour upwards.
+
+        E.g. 09:17 -> 09:30, 15:47 -> 16:00
+
+        Args:
+            datetime_utc (datetime): datetime to round upwards
+
+        Returns:
+            np.datetime64: resultant datetime in np.datetime64 format.
+        """
+        dt = datetime_utc + (datetime.min.replace(tzinfo=pytz.UTC) - datetime_utc) % timedelta(
+            minutes=30
+        )
+        return np.datetime64(dt)
+
     def __iter__(self) -> Iterator[DataInput]:
         """Returns a single observation of NWP data and 24 hours of GSP data.
 
@@ -218,6 +237,10 @@ class ProductionDataFeed(IterDataPipe):
             Iterator[DataInput]: Input data for model feature generation.
         """
         data = xgnational_production(self.path_to_configuration_file)
+        _now = datetime.now(pytz.UTC)
+        # round up to nearest 30 mins.
+        inference_time = self.round_up_nearest_thirty_minutes(_now)
+
         yield DataInput(
-            nwp=data["nwp"], gsp=data["gsp"], forecast_intitation_datetime_utc=np.datetime64("now")
+            nwp=data["nwp"], gsp=data["gsp"], forecast_intitation_datetime_utc=inference_time
         )
