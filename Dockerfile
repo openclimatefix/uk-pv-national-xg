@@ -22,6 +22,7 @@ RUN pip install -r app/requirements.txt
 COPY gradboost_pv/ app/gradboost_pv/
 COPY data/ app/data/
 COPY tests/ app/tests/
+COPY configs/ app/configs/
 
 # change to app folder
 WORKDIR /app
@@ -31,4 +32,4 @@ RUN pip install -e .
 
 RUN if [ "$TESTING" = 1 ]; then pip install pytest pytest-cov coverage; fi
 
-CMD ["python", "-u","gradboost_pv/app.py"]
+CMD ["python", "-u","gradboost_pv/app.py","--write_to_database","true"]
