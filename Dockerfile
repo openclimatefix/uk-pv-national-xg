@@ -32,4 +32,4 @@ RUN pip install -e .
 
 RUN if [ "$TESTING" = 1 ]; then pip install pytest pytest-cov coverage; fi
 
-CMD ["python", "-u","gradboost_pv/app.py","--write_to_database","true"]
+CMD ["python", "-u","gradboost_pv/app.py"]
