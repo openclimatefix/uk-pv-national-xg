@@ -20,7 +20,7 @@ AUTO_REGRESSION_COVARIATE_LAG = AUTO_REGRESSION_TARGET_LAG + np.timedelta64(1, "
 
 def load_local_preprocessed_slice(
     forecast_horizon_step: int, directory: Path = DEFAULT_DIRECTORY_TO_PROCESSED_NWP
-) -> np.ndarray:
+) -> pd.DataFrame:
     """Loads pickled NWP DataFrame."""
     return pd.read_pickle(build_local_save_path(forecast_horizon_step, directory))
 
