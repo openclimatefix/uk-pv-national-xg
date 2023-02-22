@@ -1,6 +1,6 @@
 """Script to simulate data read, model inference and prediction write"""
-import os
 import logging
+import os
 import pathlib
 from pathlib import Path
 from typing import Optional
@@ -35,13 +35,13 @@ logger = getLogger(__name__)
     "--path_to_model_config",
     type=click.Path(path_type=pathlib.Path),
     help="Path to NationalBoost model config yaml.",
-    default='./configs/default_production_model.yaml',
+    default="./configs/default_production_model.yaml",
 )
 @click.option(
     "--path_to_datafeed_config",
     type=click.Path(path_type=pathlib.Path),
     help="Path to Production Datafeed config yaml.",
-    default='./configs/default_production_datafeed.yaml',
+    default="./configs/default_production_datafeed.yaml",
 )
 @click.option(
     "--write_to_database",
