@@ -214,8 +214,20 @@ class ProductionDataFeed(IterDataPipe):
         self.path_to_configuration_file = path_to_configuration_file
 
     @classmethod
-    def round_up_nearest_thirty_minutes(cls, datetime: datetime) -> np.datetime64:
-        dt = datetime + (datetime.min.replace(tzinfo=pytz.UTC) - datetime) % timedelta(minutes=30)
+    def round_up_nearest_thirty_minutes(cls, datetime_utc: datetime) -> np.datetime64:
+        """Round a UTC datetime to the nearest 1/2 hour upwards.
+
+        E.g. 09:17 -> 09:30, 15:47 -> 16:00
+
+        Args:
+            datetime_utc (datetime): datetime to round upwards
+
+        Returns:
+            np.datetime64: resultant datetime in np.datetime64 format.
+        """
+        dt = datetime_utc + (datetime.min.replace(tzinfo=pytz.UTC) - datetime_utc) % timedelta(
+            minutes=30
+        )
         return np.datetime64(dt)
 
     def __iter__(self) -> Iterator[DataInput]:
