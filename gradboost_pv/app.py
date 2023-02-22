@@ -104,8 +104,7 @@ def main(
 
         with connection.get_session() as session:
 
-            # TODO fix later
-            results_df["forecast_mw"] = results_df["forecast_kw"]
+            results_df["forecast_mw"] = results_df["forecast_kw"] / 1000.0
 
             forecast_sql = convert_df_to_national_forecast(
                 forecast_values_df=results_df,
