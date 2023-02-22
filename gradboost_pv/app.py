@@ -1,5 +1,6 @@
 """Script to simulate data read, model inference and prediction write"""
 import os
+import logging
 import pathlib
 from pathlib import Path
 from typing import Optional
@@ -19,6 +20,11 @@ from gradboost_pv.utils.logger import getLogger
 
 DEFAULT_PATH_TO_MOCK_DATABASE = (
     Path(gradboost_pv.__file__).parents[1] / "data" / "mock_inference_database.pickle"
+)
+
+logging.basicConfig(
+    level=getattr(logging, os.getenv("LOGLEVEL", "DEBUG")),
+    format="[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s",
 )
 
 logger = getLogger(__name__)
