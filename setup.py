@@ -8,7 +8,7 @@ this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 install_requires = (this_directory / "requirements.txt").read_text().splitlines()
 
-with open("nowcasting_forecast/__init__.py") as f:
+with open("gradboost_pv/__init__.py") as f:
     for line in f:
         if line.startswith("__version__"):
             _, _, version = line.replace("'", "").split()
