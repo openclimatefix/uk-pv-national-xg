@@ -1,6 +1,5 @@
 """Configure logging"""
 import logging
-from logging.config import dictConfig
 
 logging_config = dict(
     version=1,
