@@ -1,4 +1,5 @@
 """Model inference pipeline"""
+import logging
 from pathlib import Path
 from typing import Dict
 
@@ -9,6 +10,8 @@ from torchdata.datapipes.iter import IterDataPipe
 from gradboost_pv.inference.models import NationalBoostInferenceModel, Prediction
 from gradboost_pv.utils.logger import getLogger
 from gradboost_pv.utils.typing import Hour
+
+logger = logging.getLogger(__name__)
 
 
 def process_predictions_to_pandas(predictions: Dict[Hour, Prediction]) -> pd.DataFrame:
@@ -118,7 +121,7 @@ class MockDatabaseConnection:
         self.database = MockDatabase(self.path_to_database, self.overwrite_database)
         self.database.load()
         self.connected = True
-        self.logger.debug("Initialised connection to database")
+        logger.debug("Initialised connection to database")
 
     def disconnect(self):
         """Disconnects from mock database, saving locally"""
@@ -126,7 +129,7 @@ class MockDatabaseConnection:
         self.database.disconnect()
         self.database = None
         self.connected = False
-        self.logger.debug("Closed connection to database")
+        logger.debug("Closed connection to database")
 
     def __enter__(self) -> MockDatabase:
         """Context manager returning direct access to the database
@@ -171,6 +174,7 @@ class NationalBoostModelInference(IterDataPipe):
         """Runs the inference pipeline, exhausting all data in the datafeed."""
         with self.database_connection as conn:
             for data in self.data_feed:
+                logger.debug(f'Running model for data {data}')
                 prediction: Dict[Hour, Prediction] = self.model(data)
                 conn.write(prediction)
 
