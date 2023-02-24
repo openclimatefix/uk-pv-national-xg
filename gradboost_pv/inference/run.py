@@ -86,9 +86,7 @@ class MockDatabase:
         """
         assert self.data is not None
 
-        self.data = pd.concat(
-            [self.data, process_predictions_to_pandas(predictions)], axis=0
-        )
+        self.data = pd.concat([self.data, process_predictions_to_pandas(predictions)], axis=0)
 
     def disconnect(self):
         """Save mock database locally"""
@@ -100,9 +98,7 @@ class MockDatabase:
 class MockDatabaseConnection:
     """Class for creating connection to mock local database"""
 
-    def __init__(
-        self, path_to_mock_database: Path, overwrite_database: bool = False
-    ) -> None:
+    def __init__(self, path_to_mock_database: Path, overwrite_database: bool = False) -> None:
         """Pre-connection setup to local mock database
 
         Args:
@@ -174,7 +170,7 @@ class NationalBoostModelInference(IterDataPipe):
         """Runs the inference pipeline, exhausting all data in the datafeed."""
         with self.database_connection as conn:
             for data in self.data_feed:
-                logger.debug(f'Running model for data {data}')
+                logger.debug(f"Running model for data {data}")
                 prediction: Dict[Hour, Prediction] = self.model(data)
                 conn.write(prediction)
 

@@ -51,10 +51,6 @@ logging.getLogger("fsspec").setLevel(logging.INFO)
 logging.getLogger("s3fs").setLevel(logging.INFO)
 
 
-
-
-
-
 @click.command()
 @click.option(
     "--path_to_model_config",
@@ -97,7 +93,7 @@ def main(
 ):
     """Entry point for inference script"""
 
-    logger.debug(f'Starting main app {gradboost_pv.__version__=}')
+    logger.debug(f"Starting main app {gradboost_pv.__version__=}")
 
     if s3_access_key is None or s3_secret_key is None:
         logger.debug("Creating s3 client with default env.var keys.")

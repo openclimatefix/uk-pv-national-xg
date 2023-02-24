@@ -333,7 +333,9 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         # basic data checking
         self.check_incoming_data(data)
 
-        logger.debug(f'Selecting the following steps from the NWP data {self._config.forecast_horizon_hours}')
+        logger.debug(
+            f"Selecting the following steps from the NWP data {self._config.forecast_horizon_hours}"
+        )
         _nwp = data.nwp.sel({self._config.nwp_variable_name: self._config.nwp_variables})
         _nwp = _nwp.sel(
             step=[np.timedelta64(hour, "h") for hour in self._config.forecast_horizon_hours]
@@ -403,7 +405,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         # build lagged features for each forecast horizon
         for step in self._config.forecast_horizon_hours:
             forecast_horizon = np.timedelta64(step, "h")
-            logger.debug(f'Getting GSP lag feature for {forecast_horizon=}')
+            logger.debug(f"Getting GSP lag feature for {forecast_horizon=}")
             lags = build_lagged_features(gsp=gsp, forecast_horizon=forecast_horizon)
 
             # select last one
