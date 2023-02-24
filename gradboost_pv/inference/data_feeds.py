@@ -263,13 +263,17 @@ class ProductionDataFeed(IterDataPipe):
         nwp_init_time_utc = data["nwp"].init_time_utc.values
         delta = inference_time - nwp_init_time_utc
         logger.debug(f"Need to move NWP data forward {delta}")
+        old_steps = data["nwp"].step.values
+        logger.debug(f'Old steps are {old_steps}')
         new_step = pd.to_timedelta(data["nwp"].step - delta)
         logger.debug(f" Steps to resample are {new_step}")
 
         # change to new step and resample to 30 minutes
         data["nwp"].coords["step"] = new_step
-        logger.debug("Resampling data NWP into 1 hour chunks, can take 1 minute")
-        data["nwp"] = data["nwp"].resample(step="1H").mean()  # This takes ~1 mins
+        logger.debug(f"Interpolate data NWP into 1 hour steps, can take 1 minute "
+                     f"(interpolating on to steps {old_steps}")
+        # data["nwp"] = data["nwp"].resample(step="1H").mean()  # This takes ~1 mins
+        data["nwp"] = data["nwp"].interp(step=old_steps, kwargs={"fill_value": "extrapolate"})
         data["nwp"].init_time_utc.values = inference_time
 
         logger.debug(f'Final steps are {data["nwp"].step.values}')

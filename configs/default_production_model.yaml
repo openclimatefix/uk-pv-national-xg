@@ -9,7 +9,7 @@ gsp_data_frequency: "30T"
 #   33, 34, 35, 36]  TODO - get all forecast horizons
 #forecast_horizon_hours: [
 #  1, 2, 3, 4, 5, 6, 7, 8, 12]
-forecast_horizon_hours: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+forecast_horizon_hours: [0, 1, 2, 3, 4, 5, 6, 7, 8]
 # nwp_variables: ['dswrf', 'hcct', 'lcc', 't', 'sde', 'wdir10']  TODO - get all NWPs
 nwp_variables: ['dswrf', 'lcc', 't']
 allow_missing_covariates: True
