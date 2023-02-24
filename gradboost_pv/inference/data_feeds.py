@@ -268,8 +268,8 @@ class ProductionDataFeed(IterDataPipe):
 
         # change to new step and resample to 30 minutes
         data["nwp"].coords["step"] = new_step
-        logger.debug("Resampling data NWP into 30 minute chunks, can take 1 minute")
-        data["nwp"] = data["nwp"].resample(step="30T").mean()  # This takes ~1 mins
+        logger.debug("Resampling data NWP into 1 hour chunks, can take 1 minute")
+        data["nwp"] = data["nwp"].resample(step="1H").mean()  # This takes ~1 mins
         data["nwp"].init_time_utc.values = inference_time
 
         logger.debug(f'Final steps are {data["nwp"].step.values}')
