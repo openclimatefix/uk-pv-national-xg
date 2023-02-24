@@ -121,12 +121,15 @@ def main(
                 forecast_values_df=results_df,
                 session=session,
                 model_name="National_xg",
-                version="0.0.1",  # TODO update 0.0.1
+                version="0.0.1",  # TODO update version
             )
 
             # add to database
+            logger.debug("Adding forecast to database")
             session.add(forecast_sql)
             session.commit()
+
+    logger.info('Done')
 
 
 if __name__ == "__main__":
