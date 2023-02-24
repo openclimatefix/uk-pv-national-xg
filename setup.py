@@ -10,7 +10,7 @@ install_requires = (this_directory / "requirements.txt").read_text().splitlines(
 
 setup(
     name="gradboost_pv",
-    version="0.0.15",
+    version="0.0.16",
     license="MIT",
     description="Repository for inference and training of XGBoost based National PV Model.",
     author="Tom Armstrong, Peter Dudfield, Tom Armstrong",
