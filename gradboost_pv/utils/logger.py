@@ -37,6 +37,7 @@ def getLogger(name: str) -> logging.Logger:
     Returns:
         logging.Logger: logger with specified format
     """
-    dictConfig(logging_config)
+
+    # dictConfig(logging_config)
     logger = logging.getLogger(name)
     return logger
