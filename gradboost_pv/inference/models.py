@@ -1,4 +1,5 @@
 """Models used for inference"""
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -27,6 +28,8 @@ from gradboost_pv.preprocessing.region_filtered import (
 )
 from gradboost_pv.utils.logger import getLogger
 from gradboost_pv.utils.typing import Hour
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_PATH_TO_UK_REGION_MASK = Path(__file__).parents[2] / "data/uk_region_mask.npy"
 DEFAULT_MODEL_COVARIATES = [
@@ -221,7 +224,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
 
     def initialise(self):
         """Load model and region mask"""
-        self.logger.debug("Initialising model.")
+        logger.debug("Initialising model.")
         # load models for each time step from disk.
         self.meta_model = self.load_meta_model()
 
@@ -254,16 +257,16 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         """
         try:
             mask = np.load(self._config.path_to_uk_region_mask)
-            self.logger.debug("Loaded region mask from local.")
+            logger.debug("Loaded region mask from local.")
 
         except FileNotFoundError:
-            self.logger.info("Downloading region mask.")
+            logger.info("Downloading region mask.")
             # couldn't find locally, download instead
             uk_polygon = query_eso_geojson()
             uk_polygon = process_eso_uk_multipolygon(uk_polygon)
             mask = generate_polygon_mask(self.nwp_x_coords, self.nwp_y_coords, uk_polygon)
 
-        self.logger.debug("Making mask for NWP data")
+        logger.debug("Making mask for NWP data")
         mask = xr.DataArray(
             np.tile(
                 mask.T,
@@ -282,7 +285,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
             ],
         )
 
-        self.logger.debug("Making mask for NWP data:done")
+        logger.debug("Making mask for NWP data:done")
         return mask
 
     def check_incoming_data(self, data: DataInput) -> None:
@@ -330,6 +333,9 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         # basic data checking
         self.check_incoming_data(data)
 
+        logger.debug(
+            f"Selecting the following steps from the NWP data {self._config.forecast_horizon_hours}"
+        )
         _nwp = data.nwp.sel({self._config.nwp_variable_name: self._config.nwp_variables})
         _nwp = _nwp.sel(
             step=[np.timedelta64(hour, "h") for hour in self._config.forecast_horizon_hours]
@@ -398,7 +404,13 @@ class NationalBoostInferenceModel(BaseInferenceModel):
 
         # build lagged features for each forecast horizon
         for step in self._config.forecast_horizon_hours:
-            lags = build_lagged_features(gsp, np.timedelta64(step, "h")).loc[[gsp.index.max()]]
+            forecast_horizon = np.timedelta64(step, "h")
+            logger.debug(f"Getting GSP lag feature for {forecast_horizon=}")
+            lags = build_lagged_features(gsp=gsp, forecast_horizon=forecast_horizon)
+
+            # select last one
+            lags = lags.loc[[gsp.index.max()]]
+
             lags.index = [step]
             pv_autoregressive_lags.append(lags)
 
@@ -427,7 +439,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
             missing_cols = [
                 covar for covar in self._config.required_model_covariates if covar not in X.columns
             ]
-            self.logger.info(f"Identified {len(missing_cols)} missing features, continuing anyway.")
+            logger.info(f"Identified {len(missing_cols)} missing features, continuing anyway.")
             X[missing_cols] = np.nan
 
         # reorder covariates, XGBoost requires inference/training design matrix

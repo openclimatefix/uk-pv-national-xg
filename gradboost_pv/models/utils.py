@@ -1,10 +1,13 @@
 """Model utilities"""
+import logging
 from pathlib import Path
 from typing import Callable, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from pvlib.location import Location
+
+logger = logging.getLogger(__name__)
 
 NWP_VARIABLE_NUM = 17
 NWP_STEP_HORIZON = 37
@@ -67,6 +70,7 @@ def load_nwp_coordinates(
     Returns:
         Tuple[np.ndarray, np.ndarray]: x and y coordinates respectively.
     """
+    logger.debug('Loading x and y coords')
     coords = np.load(path)
     return coords["x"], coords["y"]
 

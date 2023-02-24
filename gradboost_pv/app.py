@@ -16,7 +16,6 @@ from gradboost_pv.inference.models import Hour, NationalBoostInferenceModel, Nat
 from gradboost_pv.inference.run import MockDatabaseConnection, NationalBoostModelInference
 from gradboost_pv.models.s3 import build_object_name, create_s3_client, load_model
 from gradboost_pv.models.utils import load_nwp_coordinates
-from gradboost_pv.utils.logger import getLogger
 
 DEFAULT_PATH_TO_MOCK_DATABASE = (
     Path(gradboost_pv.__file__).parents[1] / "data" / "mock_inference_database.pickle"
@@ -24,10 +23,29 @@ DEFAULT_PATH_TO_MOCK_DATABASE = (
 
 logging.basicConfig(
     level=getattr(logging, os.getenv("LOGLEVEL", "DEBUG")),
-    format="[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s",
+    format="[%(asctime)s] %(module)s {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s",
 )
 
-logger = getLogger(__name__)
+logger = logging.getLogger(__name__)
+
+logging.getLogger("gradboost_pv").setLevel(
+    level=getattr(logging, os.getenv("LOGLEVEL", "DEBUG")),
+)
+
+logging.getLogger("__main__").setLevel(
+    level=getattr(logging, os.getenv("LOGLEVEL", "DEBUG")),
+)
+
+logging.getLogger("xgnational_model").setLevel(
+    level=getattr(logging, os.getenv("LOGLEVEL", "DEBUG")),
+)
+
+logging.getLogger("boto3").setLevel(logging.INFO)
+logging.getLogger("botocore").setLevel(logging.INFO)
+logging.getLogger("s3transfer").setLevel(logging.INFO)
+logging.getLogger("urllib3").setLevel(logging.INFO)
+logging.getLogger("fsspec").setLevel(logging.INFO)
+logging.getLogger("s3fs").setLevel(logging.INFO)
 
 
 @click.command()
@@ -46,7 +64,7 @@ logger = getLogger(__name__)
 @click.option(
     "--write_to_database",
     is_flag=True,
-    default=True,
+    default=False,
     envvar="WRITE_TO_DATABASE",
     help="Set this flag to actually write the results to the database."
     "By default we only print to stdout using mock local database.",
@@ -71,6 +89,9 @@ def main(
     s3_secret_key: Optional[str] = None,
 ):
     """Entry point for inference script"""
+
+    logger.debug(f"Starting main app {gradboost_pv.__version__=}")
+
     if s3_access_key is None or s3_secret_key is None:
         logger.debug("Creating s3 client with default env.var keys.")
         client = create_s3_client()
@@ -83,14 +104,16 @@ def main(
         return load_model(client, build_object_name(hour))
 
     # load in our national pv model
+    logger.debug("Intitialised model")
     x, y = load_nwp_coordinates()
     model_config = NationalPVModelConfig.load_from_yaml(path_to_model_config)
     model = NationalBoostInferenceModel(model_config, model_loader_by_hour, x, y)
     model.initialise()
-    logger.debug("Intitialised model")
+    logger.debug("Intitialised model:done")
 
-    data_feed = ProductionDataFeed(path_to_datafeed_config)
     logger.debug("Defined production feed.")
+    data_feed = ProductionDataFeed(path_to_datafeed_config)
+    logger.debug("Defined production feed:done")
 
     # create a mock database to write to
     logger.debug("Not writing to database, storing in local mock database")
@@ -101,6 +124,7 @@ def main(
     logger.debug("Model inference complete")
 
     # get dataframe object
+    logger.debug("Saving results to DB")
     database_conn = MockDatabaseConnection(DEFAULT_PATH_TO_MOCK_DATABASE, overwrite_database=False)
     database_conn.connect()
     results_df = database_conn.database.data
@@ -129,7 +153,7 @@ def main(
             session.add(forecast_sql)
             session.commit()
 
-    logger.info('Done')
+    logger.info("Done")
 
 
 if __name__ == "__main__":

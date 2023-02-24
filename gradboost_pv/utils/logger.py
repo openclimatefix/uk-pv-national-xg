@@ -1,6 +1,5 @@
 """Configure logging"""
 import logging
-from logging.config import dictConfig
 
 logging_config = dict(
     version=1,
@@ -37,6 +36,7 @@ def getLogger(name: str) -> logging.Logger:
     Returns:
         logging.Logger: logger with specified format
     """
-    dictConfig(logging_config)
+
+    # dictConfig(logging_config)
     logger = logging.getLogger(name)
     return logger

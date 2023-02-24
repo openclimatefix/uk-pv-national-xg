@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Iterator, Optional, Union
 
 import numpy as np
+import pandas as pd
 import pytz
 import s3fs
 import xarray as xr
@@ -232,8 +233,6 @@ class ProductionDataFeed(IterDataPipe):
 
         # round up to nearest 30 minutes
         dt = now + (datetime.min.replace(tzinfo=pytz.UTC) - now) % timedelta(minutes=30)
-        # minus 1 hour
-        dt = dt - timedelta(hours=1)
 
         return np.datetime64(dt)
 
@@ -248,10 +247,32 @@ class ProductionDataFeed(IterDataPipe):
         data = xgnational_production(self.path_to_configuration_file)
         inference_time = self.get_inference_time()
 
-        logger.debug(f"{inference_time}")
+        logger.debug(f"{inference_time=}")
+        logger.debug(f"{data['nwp'].init_time_utc.values=}")
 
         logger.debug(data["gsp"])
         logger.debug(data["nwp"])
+
+        logger.debug("The following times should be the same, so will adjust if not")
+        logger.debug(f"{inference_time=}")
+        logger.debug(f"{data['nwp'].init_time_utc.values=}")
+
+        # need to adjust NWP values so they are the
+        # - have the same 'nwp_init_time_utc' as 'inference_time'
+        # and the steps are in hours
+        nwp_init_time_utc = data["nwp"].init_time_utc.values
+        delta = inference_time - nwp_init_time_utc
+        logger.debug(f"Need to move NWP data forward {delta}")
+        new_step = pd.to_timedelta(data["nwp"].step - delta)
+        logger.debug(f" Steps to resample are {new_step}")
+
+        # change to new step and resample to 30 minutes
+        data["nwp"].coords["step"] = new_step
+        logger.debug("Resampling data NWP into 1 hour chunks, can take 1 minute")
+        data["nwp"] = data["nwp"].resample(step="1H").mean()  # This takes ~1 mins
+        data["nwp"].init_time_utc.values = inference_time
+
+        logger.debug(f'Final steps are {data["nwp"].step.values}')
 
         yield DataInput(
             nwp=data["nwp"], gsp=data["gsp"], forecast_intitation_datetime_utc=inference_time
