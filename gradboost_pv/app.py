@@ -145,7 +145,7 @@ def main(
                 forecast_values_df=results_df,
                 session=session,
                 model_name="National_xg",
-                version="0.0.1",  # TODO update version
+                version=gradboost_pv.__version__
             )
 
             # add to database
