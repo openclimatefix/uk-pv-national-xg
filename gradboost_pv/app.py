@@ -10,13 +10,12 @@ from nowcasting_datamodel.connection import DatabaseConnection
 from nowcasting_datamodel.models.convert import convert_df_to_national_forecast
 from xgboost import XGBRegressor
 
+import gradboost_pv
 from gradboost_pv.inference.data_feeds import ProductionDataFeed
 from gradboost_pv.inference.models import Hour, NationalBoostInferenceModel, NationalPVModelConfig
 from gradboost_pv.inference.run import MockDatabaseConnection, NationalBoostModelInference
 from gradboost_pv.models.s3 import build_object_name, create_s3_client, load_model
 from gradboost_pv.models.utils import load_nwp_coordinates
-
-import gradboost_pv
 
 DEFAULT_PATH_TO_MOCK_DATABASE = (
     Path(gradboost_pv.__file__).parents[1] / "data" / "mock_inference_database.pickle"
