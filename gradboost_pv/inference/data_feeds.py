@@ -1,4 +1,5 @@
 """Datafeeds for model inference"""
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -15,6 +16,8 @@ from torchdata.datapipes import functional_datapipe
 from torchdata.datapipes.iter import IterDataPipe
 
 from gradboost_pv.models.utils import load_nwp_coordinates
+
+logger = logging.getLogger(__name__)
 
 
 # TODO - fix interpolation of data points and move to datapipes?
@@ -214,20 +217,24 @@ class ProductionDataFeed(IterDataPipe):
         self.path_to_configuration_file = path_to_configuration_file
 
     @classmethod
-    def round_up_nearest_thirty_minutes(cls, datetime_utc: datetime) -> np.datetime64:
-        """Round a UTC datetime to the nearest 1/2 hour upwards.
+    def get_inference_time(cls) -> np.datetime64:
+        """Round a UTC datetime to the nearest 1/2 hour upwards and minus 1 hour.
 
-        E.g. 09:17 -> 09:30, 15:47 -> 16:00
+        E.g. 09:17 -> 08:30, 15:47 -> 15:00
 
-        Args:
-            datetime_utc (datetime): datetime to round upwards
+        This is because the first model prediction is for one hours time,
+        so we should move the inference time to 1 hour before rounded up now
 
         Returns:
             np.datetime64: resultant datetime in np.datetime64 format.
         """
-        dt = datetime_utc + (datetime.min.replace(tzinfo=pytz.UTC) - datetime_utc) % timedelta(
-            minutes=30
-        )
+        now = datetime.now(pytz.UTC)
+
+        # round up to nearest 30 minutes
+        dt = now + (datetime.min.replace(tzinfo=pytz.UTC) - now) % timedelta(minutes=30)
+        # minus 1 hour
+        dt = dt - timedelta(hours=1)
+
         return np.datetime64(dt)
 
     def __iter__(self) -> Iterator[DataInput]:
@@ -236,10 +243,15 @@ class ProductionDataFeed(IterDataPipe):
         Yields:
             Iterator[DataInput]: Input data for model feature generation.
         """
+        logger.debug("Getting Data")
+
         data = xgnational_production(self.path_to_configuration_file)
-        _now = datetime.now(pytz.UTC)
-        # round up to nearest 30 mins.
-        inference_time = self.round_up_nearest_thirty_minutes(_now)
+        inference_time = self.get_inference_time()
+
+        logger.debug(f"{inference_time}")
+
+        logger.debug(data["gsp"])
+        logger.debug(data["nwp"])
 
         yield DataInput(
             nwp=data["nwp"], gsp=data["gsp"], forecast_intitation_datetime_utc=inference_time
