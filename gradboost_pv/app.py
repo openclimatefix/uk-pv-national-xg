@@ -64,7 +64,7 @@ logging.getLogger("s3fs").setLevel(logging.INFO)
 @click.option(
     "--write_to_database",
     is_flag=True,
-    default=False,
+    default=True,
     envvar="WRITE_TO_DATABASE",
     help="Set this flag to actually write the results to the database."
     "By default we only print to stdout using mock local database.",
