@@ -85,11 +85,15 @@ class ProductionOpenNWPNetcdfIterDataPipe(IterDataPipe):
     def __iter__(self) -> Iterator[xr.Dataset]:
         """Yields the latest NWP data from s3."""
         while True:
-            # with self.fs.open(self.s3_path_to_data) as file_obj:
-            #     nwp = xr.open_dataset(file_obj, engine="h5netcdf")
-            #     nwp = self._process_nwp_from_netcdf(nwp)
-            #     yield nwp
-            nwp = xr.open_dataset(self.fs.open(self.s3_path_to_data), engine="h5netcdf")
+            # load zarr file
+            nwp = xr.open_dataset(
+                self.s3_path_to_data,
+                engine="zarr",
+                consolidated=True,
+                mode="r",
+                chunks=None,  # Reading Satellite Zarr benefits from setting chunks='auto'
+                # (see issue #456) but 'auto' massively slows down reading NWPs.
+            )
             nwp = self._process_nwp_from_netcdf(nwp)
             yield nwp
 
@@ -270,9 +274,9 @@ class ProductionDataFeed(IterDataPipe):
         new_step = pd.to_timedelta(data["nwp"].step - delta)
         logger.debug(f" Steps to resample are {new_step}")
 
-        # change to new step and resample to 30 minutes
+        # change to new step and resample to 1 hour
         data["nwp"].coords["step"] = new_step
-        logger.debug(f"Resampling to 1 hour")
+        logger.debug("Resampling to 1 hour")
         data["nwp"] = data["nwp"].resample(step="1H").mean()  # This takes ~1 mins
         data["nwp"].init_time_utc.values = inference_time
 
