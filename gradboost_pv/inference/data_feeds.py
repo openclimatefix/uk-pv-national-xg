@@ -86,6 +86,9 @@ class ProductionOpenNWPNetcdfIterDataPipe(IterDataPipe):
         """Yields the latest NWP data from s3."""
         while True:
             # load zarr file
+
+            logger.debug(f'Loading NWP data: {self.s3_path_to_data}')
+
             nwp = xr.open_dataset(
                 self.s3_path_to_data,
                 engine="zarr",
