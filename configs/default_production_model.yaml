@@ -2,14 +2,10 @@ name: "xgnational_model"
 path_to_uk_region_mask: "data/uk_region_mask.npy"
 gsp_data_history: 24
 gsp_data_frequency: "30T"
-# forecast_horizon_hours: [
-#   1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
-#   13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
-#   23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
-#   33, 34, 35, 36]  TODO - get all forecast horizons
-#forecast_horizon_hours: [
-#  1, 2, 3, 4, 5, 6, 7, 8, 12]
-forecast_horizon_hours: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+forecast_horizon_hours: [
+   1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+   13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+   23, 24, 25, 26, 27, 28, 29, 30]
 # nwp_variables: ['dswrf', 'hcct', 'lcc', 't', 'sde', 'wdir10']  TODO - get all NWPs
 nwp_variables: ['dswrf', 'lcc', 't']
 allow_missing_covariates: True

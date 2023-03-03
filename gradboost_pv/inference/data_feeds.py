@@ -274,7 +274,7 @@ class ProductionDataFeed(IterDataPipe):
         new_step = pd.to_timedelta(data["nwp"].step - delta)
         logger.debug(f" Steps to resample are {new_step}")
 
-        # change to new step and resample to 30 minutes
+        # change to new step and resample to 1 hour
         data["nwp"].coords["step"] = new_step
         logger.debug("Resampling to 1 hour")
         data["nwp"] = data["nwp"].resample(step="1H").mean()  # This takes ~1 mins
