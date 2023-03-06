@@ -29,12 +29,12 @@ The notebook `notebooks/models/geospatial_dsample/uk_region_model.ipynb` demonst
 For access to the current models, they are stored in the s3 bucket: `nowcasting-national-forecaster-models-development` and models are keyed by the forecast hour they refer to. They can also be access via `gradboost_pv.models.s3.load_model`
 
 ## Model Inference
-There are two ways to run model inference. A draft version, which builds a mock datapipe from GCP data can be found at `scripts/inference/mock_setup.py` and can be ran using 
+There are two ways to run model inference. A draft version, which builds a mock datapipe from GCP data can be found at `scripts/inference/mock_setup.py` and can be ran using
 ```
 python -m scripts.inference.mock_setup
 ```
 
-For inference using production datafeeds, running the following will give model prediction: 
+For inference using production datafeeds, running the following will give model prediction:
 ```
 python -m gradboost_pv.app --path_to_model_config <PATH_TO_MODEL_CONFIG> --path_to_datafeed_config <PATH_TO_DATAFEED_CONFIG>
 ```
