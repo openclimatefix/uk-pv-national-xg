@@ -22,11 +22,10 @@ def filter_forecasts_on_sun_elevation(forecasts: List[ForecastSQL]) -> List[Fore
         forecast with zeroed out times
     """
 
-    logger.info("Filtering forecasts on sun elevation")
+    logger.info(f"Filtering forecasts on sun elevation. {ELEVATION_LIMIT=}")
 
     for forecast in forecasts:
-        gsp_id = forecast.location.gsp_id
-        # choose lat lon of Oxford (in the middle of the country)
+
         lat = 51.7612
         lon = -1.2465
         target_times = [

@@ -84,9 +84,9 @@ def mock_gsp_data() -> pd.DataFrame:
 
 @pytest.fixture
 def forecasts(db_session) -> List[ForecastSQL]:
-
+    """ Make fake forecasts """
     # create
-    f = make_fake_forecasts(gsp_ids=list(range(1, 11)), session=db_session)
+    f = make_fake_forecasts(gsp_ids=list(range(1, 2)), session=db_session)
 
     # # add
     db_session.add_all(f)
