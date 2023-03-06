@@ -419,7 +419,6 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         X = pd.concat([X, pv_autoregressive_lags, solar_variables], axis=1)
 
         if not self._config.allow_missing_covariates:
-
             assert X.shape == (
                 len(self._config.forecast_horizon_hours),
                 len(self._config.required_model_covariates),

@@ -42,7 +42,6 @@ def test_build_solar_pv_features():
 
 
 def test_build_lagged_features(mock_gsp_data: pd.DataFrame):
-
     forecast_horizon = np.timedelta64(0, "h")
 
     expected_result = pd.DataFrame(
