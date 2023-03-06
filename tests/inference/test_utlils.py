@@ -2,8 +2,10 @@ from datetime import datetime
 
 import pandas as pd
 
-from gradboost_pv.inference.utils import calculate_azimuth_and_elevation_angle
-from gradboost_pv.inference.utils import filter_forecasts_on_sun_elevation
+from gradboost_pv.inference.utils import (
+    calculate_azimuth_and_elevation_angle,
+    filter_forecasts_on_sun_elevation,
+)
 
 
 def test_calculate_azimuth_and_elevation_angle():

@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
-from nowcasting_datamodel.fake import make_fake_forecasts
-from nowcasting_datamodel.models import ForecastSQL, Base_Forecast
 from nowcasting_datamodel.connection import DatabaseConnection
+from nowcasting_datamodel.fake import make_fake_forecasts
+from nowcasting_datamodel.models import Base_Forecast, ForecastSQL
 from testcontainers.postgres import PostgresContainer
 
 import gradboost_pv
@@ -84,7 +84,7 @@ def mock_gsp_data() -> pd.DataFrame:
 
 @pytest.fixture
 def forecasts(db_session) -> List[ForecastSQL]:
-    """ Make fake forecasts """
+    """Make fake forecasts"""
     # create
     f = make_fake_forecasts(gsp_ids=list(range(1, 2)), session=db_session)
 
