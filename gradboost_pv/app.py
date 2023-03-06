@@ -143,6 +143,7 @@ def main(
             results_df["target_datetime_utc"] = results_df["datetime_of_target_utc"]
 
             print(results_df)
+            logger.debug(results_df)
 
             forecast_sql = convert_df_to_national_forecast(
                 forecast_values_df=results_df,
