@@ -70,7 +70,7 @@ def load_nwp_coordinates(
     Returns:
         Tuple[np.ndarray, np.ndarray]: x and y coordinates respectively.
     """
-    logger.debug('Loading x and y coords')
+    logger.debug("Loading x and y coords")
     coords = np.load(path)
     return coords["x"], coords["y"]
 
@@ -114,10 +114,10 @@ def build_rolling_linear_regression_betas(
     Args:
         X (Union[pd.Series, pd.DataFrame]): time-series of 1-D variable
         y (Union[pd.Series, pd.DataFrame]): time-series of 1-D target
-        window_size (int, optional): size of rolling window. Defaults to
-        DEFAULT_ROLLING_LR_WINDOW_SIZE.
-        regreession_function (Callable[[np.ndarray, np.ndarray], float]):
-        Function to regress x and y.
+        window_size (int, optional): size of rolling window.
+            Defaults to DEFAULT_ROLLING_LR_WINDOW_SIZE.
+        regression_function (Callable[[np.ndarray, np.ndarray], float]): Function to
+            regress x and y.
 
     Returns:
         pd.Series: time-series of the regression coefficients

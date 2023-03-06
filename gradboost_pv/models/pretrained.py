@@ -42,7 +42,7 @@ def build_datasets_from_local(
     """Generates features for region-masked model.
 
     Args:
-        processed_nwp_slice (pd.DataFrame): Processed NWP data performed at an earlier stage
+        X (pd.DataFrame): Processed NWP data performed at an earlier stage
         national_gsp (xr.Dataset): National GSP PV data
         forecast_horizon (np.timedelta64): forecast horizon for features
         summarize_buckets (bool, optional): Used to simplify downsampled data from pretrained model.

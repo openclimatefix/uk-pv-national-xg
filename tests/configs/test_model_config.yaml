@@ -3,9 +3,10 @@ path_to_uk_region_mask: "data/uk_region_mask.npy"
 gsp_data_history: 24
 gsp_data_frequency: "30T"
 forecast_horizon_hours: [5]
-nwp_variables: ['dswrf', 'lcc', 't']
+nwp_variables: ["dswrf", "lcc", "t"]
 allow_missing_covariates: True
-required_model_covariates: [
+required_model_covariates:
+  [
     "dswrf_within",
     "dswrf_outer",
     "hcct_within",
@@ -38,7 +39,8 @@ required_model_covariates: [
     "zenith",
     "elevation",
     "azimuth",
-    "equation_of_time"]
+    "equation_of_time",
+  ]
 overwrite_read_datetime_at_inference: True
 clip_near_zero_predictions: True
-clip_near_zero_value_percentage: 0.005 
+clip_near_zero_value_percentage: 0.005

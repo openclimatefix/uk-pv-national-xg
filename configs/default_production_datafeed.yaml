@@ -4,7 +4,7 @@ general:
 input_data:
   #---------------------- GSP -------------------
   gsp:
-    history_minutes: 1440  # 60 x 24
+    history_minutes: 1440 # 60 x 24
     forecast_minutes: 480
     live_load_extra_minutes: 0
     live_interpolate_minutes: 0
@@ -33,4 +33,4 @@ input_data:
       - prate
     nwp_zarr_path: !ENV ${NWP_ZARR_PATH}
     history_minutes: 60
-    forecast_minutes: 480  # TODO - need 36 hours, not just 12
+    forecast_minutes: 480 # TODO - need 36 hours, not just 12

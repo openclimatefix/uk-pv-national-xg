@@ -17,6 +17,4 @@ def test_nwp_single_observation(nwp_single_observation: xr.Dataset):
     assert nwp_single_observation.coords["init_time"] == np.datetime64(
         "2020-01-04T18:00:00.000000000"
     )
-    assert nwp_single_observation.coords["step"] == np.timedelta64(
-        18_000_000_000_000, "ns"
-    )
+    assert nwp_single_observation.coords["step"] == np.timedelta64(18_000_000_000_000, "ns")

@@ -56,9 +56,7 @@ def test_rolling_univariate_regression():
         X,
         y,
         window_size=3,
-        regression_function=lambda x, y: clipped_univariate_linear_regression(
-            x, y, epsilon=0.0
-        ),
+        regression_function=lambda x, y: clipped_univariate_linear_regression(x, y, epsilon=0.0),
     )
 
     assert len(betas) == 10

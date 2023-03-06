@@ -143,12 +143,13 @@ def main(
             results_df["target_datetime_utc"] = results_df["datetime_of_target_utc"]
 
             print(results_df)
+            logger.debug(results_df)
 
             forecast_sql = convert_df_to_national_forecast(
                 forecast_values_df=results_df,
                 session=session,
                 model_name="National_xg",
-                version=gradboost_pv.__version__
+                version=gradboost_pv.__version__,
             )
 
             # zero out night times

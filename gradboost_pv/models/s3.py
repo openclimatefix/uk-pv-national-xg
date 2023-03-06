@@ -54,7 +54,7 @@ def load_model(s3_client, object_name: str, bucket_name: str = DEV_BUCKET_NAME) 
         XGBRegressor: NationalBoost model for specific forecast horizon
     """
 
-    logger.debug(f'Going to load model from {bucket_name=} {object_name=}')
+    logger.debug(f"Going to load model from {bucket_name=} {object_name=}")
 
     with BytesIO() as f:
         s3_client.download_fileobj(Bucket=bucket_name, Key=object_name, Fileobj=f)
