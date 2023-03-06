@@ -70,7 +70,7 @@ def load_nwp_coordinates(
     Returns:
         Tuple[np.ndarray, np.ndarray]: x and y coordinates respectively.
     """
-    logger.debug('Loading x and y coords')
+    logger.debug("Loading x and y coords")
     coords = np.load(path)
     return coords["x"], coords["y"]
 

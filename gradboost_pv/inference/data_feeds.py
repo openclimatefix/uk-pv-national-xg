@@ -49,6 +49,7 @@ class ProductionOpenNWPNetcdfIterDataPipe(IterDataPipe):
         """Processes the NWP data in the same fashion as 'open_nwp' method
 
         Processes netcdf file to the same NWP format as datapipes processing.
+
         Args:
             nwp (xr.Dataset): NWP data loaded from prod s3
 
@@ -87,7 +88,7 @@ class ProductionOpenNWPNetcdfIterDataPipe(IterDataPipe):
         while True:
             # load zarr file
 
-            logger.debug(f'Loading NWP data: {self.s3_path_to_data}')
+            logger.debug(f"Loading NWP data: {self.s3_path_to_data}")
 
             nwp = xr.open_dataset(
                 self.s3_path_to_data,

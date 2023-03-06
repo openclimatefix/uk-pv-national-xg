@@ -149,7 +149,7 @@ def main(
                 forecast_values_df=results_df,
                 session=session,
                 model_name="National_xg",
-                version=gradboost_pv.__version__
+                version=gradboost_pv.__version__,
             )
 
             # zero out night times
