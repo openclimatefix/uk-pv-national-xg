@@ -14,6 +14,7 @@ import gradboost_pv
 from gradboost_pv.inference.data_feeds import ProductionDataFeed
 from gradboost_pv.inference.models import Hour, NationalBoostInferenceModel, NationalPVModelConfig
 from gradboost_pv.inference.run import MockDatabaseConnection, NationalBoostModelInference
+from gradboost_pv.inference.utils import filter_forecasts_on_sun_elevation
 from gradboost_pv.models.s3 import build_object_name, create_s3_client, load_model
 from gradboost_pv.models.utils import load_nwp_coordinates
 
@@ -149,6 +150,10 @@ def main(
                 model_name="National_xg",
                 version=gradboost_pv.__version__
             )
+
+            # zero out night times
+            forecasts = filter_forecasts_on_sun_elevation(forecasts=[forecast_sql])
+            forecast_sql = forecasts[0]
 
             # add to database
             logger.debug("Adding forecast to database")
