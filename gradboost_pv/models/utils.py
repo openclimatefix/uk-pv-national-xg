@@ -116,7 +116,7 @@ def build_rolling_linear_regression_betas(
         y (Union[pd.Series, pd.DataFrame]): time-series of 1-D target
         window_size (int, optional): size of rolling window.
             Defaults to DEFAULT_ROLLING_LR_WINDOW_SIZE.
-        regression_function (Callable[[np.ndarray, np.ndarray], float]): Function to 
+        regression_function (Callable[[np.ndarray, np.ndarray], float]): Function to
             regress x and y.
 
     Returns:
