@@ -61,6 +61,9 @@ class ProductionOpenNWPNetcdfIterDataPipe(IterDataPipe):
             {"init_time": "init_time_utc", "variable": "channel", "y": "y_osgb", "x": "x_osgb"}
         )
 
+        # rename sd to sde
+        nwp = self.rename_channels(nwp)
+
         # select most recent time point
         nwp = nwp.isel(init_time_utc=-1)
 
@@ -80,6 +83,25 @@ class ProductionOpenNWPNetcdfIterDataPipe(IterDataPipe):
 
         # quickest workaround, not production ready!!!!!
         nwp = nwp.reindex({"x_osgb": x_coords, "y_osgb": y_coords}, method="nearest")
+
+        return nwp
+
+    @staticmethod
+    def rename_channels(nwp):
+        """Renaming sd to sde in NWP data.
+
+        Might want to change / add to this in the future.
+        Sometime the backtest data is named differently to the live data
+        """
+        logger.debug('Renaming "sd" to "sde" in NWP data')
+        variables = list(nwp.channel.values)
+        new_variables = []
+        for v in variables:
+            if v == "sd":
+                new_variables.append("sde")
+            else:
+                new_variables.append(v)
+        nwp = nwp.assign_coords({"channel": new_variables})
 
         return nwp
 

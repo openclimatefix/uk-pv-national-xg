@@ -342,6 +342,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         )
 
         # use region-masked nwp processing
+        logger.debug('Making UK NWP data for sea and land')
         nwp_inner, nwp_outer = _process_nwp(
             _nwp, self.mask, self._config.x_coord_name, self._config.y_coord_name
         )
@@ -374,6 +375,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         )
 
         # process PV/GSP data
+        logger.debug('Process the GSP data')
         gsp = pd.DataFrame(
             data.gsp[self._config.gsp_pv_generation_name].values
             / data.gsp[self._config.gsp_installed_capacity_name].values,
@@ -388,6 +390,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
             ]
         )
 
+        logger.debug('Make Trig data')
         _X = trigonometric_datetime_transformation(forecast_times)
         _X = pd.DataFrame(
             data=_X,
@@ -397,6 +400,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
 
         X = pd.concat([nwp_inner, nwp_outer, nwp_diff, _X], axis=1)
 
+        logger.debug('Make Solar features')
         solar_variables = build_solar_pv_features(forecast_times)
         solar_variables.index = self._config.forecast_horizon_hours
 
