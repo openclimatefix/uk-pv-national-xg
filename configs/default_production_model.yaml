@@ -36,7 +36,7 @@ forecast_horizon_hours:
     30,
   ]
 # nwp_variables: ['dswrf', 'hcct', 'lcc', 't', 'sde', 'wdir10']  TODO - get all NWPs
-nwp_variables: ["dswrf", "lcc", "t"]
+nwp_variables: ["dswrf", "lcc", "t", "sde"]
 allow_missing_covariates: True
 required_model_covariates:
   [
