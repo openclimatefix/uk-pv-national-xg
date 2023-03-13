@@ -133,11 +133,9 @@ def main(
     if not write_to_database:
         print(results_df)
     else:
-
         connection = DatabaseConnection(url=os.getenv("DB_URL"))
 
         with connection.get_session() as session:
-
             # TODO fix, wrong units somewhere
             results_df["forecast_mw"] = results_df["forecast_kw"]
             results_df["target_datetime_utc"] = results_df["datetime_of_target_utc"]

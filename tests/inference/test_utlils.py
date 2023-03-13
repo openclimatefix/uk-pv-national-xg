@@ -27,7 +27,6 @@ def test_calculate_azimuth_and_elevation_angle():
 
 
 def test_filter_forecasts_on_sun_elevation(forecasts):
-
     # night time
     forecasts[0].forecast_values[0].target_time = datetime(2022, 1, 1)
     forecasts[0].forecast_values[0].expected_power_generation_megawatts = 1

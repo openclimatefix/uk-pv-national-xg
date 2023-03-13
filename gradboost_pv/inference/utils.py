@@ -25,7 +25,6 @@ def filter_forecasts_on_sun_elevation(forecasts: List[ForecastSQL]) -> List[Fore
     logger.info(f"Filtering forecasts on sun elevation. {ELEVATION_LIMIT=}")
 
     for forecast in forecasts:
-
         lat = 51.7612
         lon = -1.2465
         target_times = [
@@ -40,7 +39,6 @@ def filter_forecasts_on_sun_elevation(forecasts: List[ForecastSQL]) -> List[Fore
 
         # check that any elevations are < 'ELEVATION_LIMIT'
         if (sun_df["elevation"] < ELEVATION_LIMIT).sum() > 0:
-
             logger.debug(f"Got sun angle for {lat} {lon} {target_times}, and some are below zero")
 
             # loop through target times
