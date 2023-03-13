@@ -440,6 +440,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
                 covar for covar in self._config.required_model_covariates if covar not in X.columns
             ]
             logger.info(f"Identified {len(missing_cols)} missing features, continuing anyway.")
+            logger.info(f"These are {missing_cols}")
             X[missing_cols] = np.nan
 
         # reorder covariates, XGBoost requires inference/training design matrix
