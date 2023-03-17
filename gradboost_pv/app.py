@@ -176,8 +176,10 @@ def main(
             forecast_sql.forecast_values = [
                 f for f in forecast_sql.forecast_values if f.target_time >= target_time_filter
             ]
-            logger.debug(f"Adding forecasts to latest, if target time is past {target_time_filter}. "
-                         f"This will be {len(forecast_sql.forecast_values)} forecast values")
+            logger.debug(
+                f"Adding forecasts to latest, if target time is past {target_time_filter}. "
+                f"This will be {len(forecast_sql.forecast_values)} forecast values"
+            )
             update_all_forecast_latest(
                 session=session, forecasts=forecasts, update_national=True, update_gsp=False
             )
