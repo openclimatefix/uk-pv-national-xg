@@ -2,25 +2,19 @@
 import logging
 import os
 import pathlib
-from datetime import timedelta
 from pathlib import Path
 from typing import Optional
 
 import click
-from nowcasting_datamodel.connection import DatabaseConnection
-from nowcasting_datamodel.models.convert import convert_df_to_national_forecast
-from nowcasting_datamodel.save.update import (
-    update_all_forecast_latest,
-)
 from xgboost import XGBRegressor
 
 import gradboost_pv
 from gradboost_pv.inference.data_feeds import ProductionDataFeed
 from gradboost_pv.inference.models import Hour, NationalBoostInferenceModel, NationalPVModelConfig
 from gradboost_pv.inference.run import MockDatabaseConnection, NationalBoostModelInference
-from gradboost_pv.inference.utils import filter_forecasts_on_sun_elevation
 from gradboost_pv.models.s3 import build_object_name, create_s3_client, load_model
 from gradboost_pv.models.utils import load_nwp_coordinates
+from gradboost_pv.save import save_to_database
 
 DEFAULT_PATH_TO_MOCK_DATABASE = (
     Path(gradboost_pv.__file__).parents[1] / "data" / "mock_inference_database.pickle"
@@ -144,47 +138,10 @@ def main(
     if not write_to_database:
         print(results_df)
     else:
-        connection = DatabaseConnection(url=os.getenv("DB_URL"))
-
-        with connection.get_session() as session:
-            # TODO fix, wrong units somewhere
-            results_df["forecast_mw"] = results_df["forecast_kw"]
-            results_df["target_datetime_utc"] = results_df["datetime_of_target_utc"]
-
-            logger.debug(results_df[["forecast_mw", "target_datetime_utc"]])
-
-            forecast_sql = convert_df_to_national_forecast(
-                forecast_values_df=results_df,
-                session=session,
-                model_name="National_xg",
-                version=gradboost_pv.__version__,
-            )
-
-            # zero out night times
-            forecasts = filter_forecasts_on_sun_elevation(forecasts=[forecast_sql])
-            forecast_sql = forecasts[0]
-
-            # add to database
-            logger.debug("Adding forecast to database")
-            session.add(forecast_sql)
-            session.commit()
-
-            # only save 8 hour out, so we dont override PVnet
-            target_time_filter = forecast_sql.forecast_creation_time + timedelta(
-                hours=start_hour_to_save
-            )
-            forecast_sql.forecast_values = [
-                f for f in forecast_sql.forecast_values if f.target_time >= target_time_filter
-            ]
-            logger.debug(
-                f"Adding forecasts to latest, if target time is past {target_time_filter}. "
-                f"This will be {len(forecast_sql.forecast_values)} forecast values"
-            )
-            update_all_forecast_latest(
-                session=session, forecasts=forecasts, update_national=True, update_gsp=False
-            )
+        save_to_database(results_df, start_hour_to_save, write_to_database)
 
     logger.info("Done")
+
 
 
 if __name__ == "__main__":

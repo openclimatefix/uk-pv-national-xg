@@ -16,7 +16,6 @@ from gradboost_pv.inference.models import (
     Prediction,
 )
 from gradboost_pv.inference.run import NationalBoostModelInference
-from gradboost_pv.models.s3 import build_object_name, load_model
 from gradboost_pv.models.utils import load_nwp_coordinates
 
 PATH_TO_TEST_DATA_DIRECTORY = Path(gradboost_pv.__file__).parents[1] / "data" / "test"
