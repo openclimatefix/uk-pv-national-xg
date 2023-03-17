@@ -21,7 +21,6 @@ from gradboost_pv.inference.utils import filter_forecasts_on_sun_elevation
 from gradboost_pv.models.s3 import build_object_name, create_s3_client, load_model
 from gradboost_pv.models.utils import load_nwp_coordinates
 
-
 DEFAULT_PATH_TO_MOCK_DATABASE = (
     Path(gradboost_pv.__file__).parents[1] / "data" / "mock_inference_database.pickle"
 )
@@ -98,7 +97,7 @@ def main(
     write_to_database: bool = True,
     s3_access_key: Optional[str] = None,
     s3_secret_key: Optional[str] = None,
-    start_hour_to_save: Optional[int] = 8
+    start_hour_to_save: Optional[int] = 8,
 ):
     """Entry point for inference script"""
 
