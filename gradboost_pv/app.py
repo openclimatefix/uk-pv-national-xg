@@ -8,6 +8,9 @@ from typing import Optional
 import click
 from nowcasting_datamodel.connection import DatabaseConnection
 from nowcasting_datamodel.models.convert import convert_df_to_national_forecast
+from nowcasting_datamodel.save.update import (
+    update_all_forecast_latest,
+)
 from xgboost import XGBRegressor
 
 import gradboost_pv
@@ -17,6 +20,7 @@ from gradboost_pv.inference.run import MockDatabaseConnection, NationalBoostMode
 from gradboost_pv.inference.utils import filter_forecasts_on_sun_elevation
 from gradboost_pv.models.s3 import build_object_name, create_s3_client, load_model
 from gradboost_pv.models.utils import load_nwp_coordinates
+
 
 DEFAULT_PATH_TO_MOCK_DATABASE = (
     Path(gradboost_pv.__file__).parents[1] / "data" / "mock_inference_database.pickle"
@@ -82,12 +86,19 @@ logging.getLogger("s3fs").setLevel(logging.INFO)
     default=None,
     help="Optional AWS s3 Secret Key.",
 )
+@click.option(
+    "--start_hour_to_save",
+    type=int,
+    default=8,
+    help="From X hours out, we save the values in the forecast latest table",
+)
 def main(
     path_to_model_config: Path,
     path_to_datafeed_config: Path,
     write_to_database: bool = True,
     s3_access_key: Optional[str] = None,
     s3_secret_key: Optional[str] = None,
+    start_hour_to_save: Optional[int] = 8
 ):
     """Entry point for inference script"""
 
@@ -157,6 +168,12 @@ def main(
             logger.debug("Adding forecast to database")
             session.add(forecast_sql)
             session.commit()
+
+            # only save 8 hour out, so we dont override PVnet
+            forecast_sql.forecast_values = forecast_sql.forecast_values[start_hour_to_save:]
+            update_all_forecast_latest(
+                session=session, forecasts=forecasts, update_national=True, update_gsp=False
+            )
 
     logger.info("Done")
 
