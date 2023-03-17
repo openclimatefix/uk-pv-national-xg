@@ -225,26 +225,9 @@ class NationalBoostInferenceModel(BaseInferenceModel):
     def initialise(self):
         """Load model and region mask"""
         logger.debug("Initialising model.")
-        # load models for each time step from disk.
-        self.meta_model = self.load_meta_model()
 
         # get uk-region mask/polygon
         self.mask = self.load_mask()
-
-    def load_meta_model(self) -> Dict[Hour, XGBRegressor]:
-        """Loads model for each forecast horizon
-
-        Returns:
-            Dict[Hour, XGBRegressor]: dict of models indexed by forecast horizon
-        """
-        return {
-            forecast_horizon_hour: self.load_model_per_forecast_horizon(forecast_horizon_hour)
-            for forecast_horizon_hour in self._config.forecast_horizon_hours
-        }
-
-    def load_model_per_forecast_horizon(self, forecast_horizon_hour: Hour) -> XGBRegressor:
-        """Wrapper for model loading"""
-        return self.model_loader(forecast_horizon_hour)
 
     def load_mask(self) -> xr.DataArray:
         """Loads UK-region mask into memory.
@@ -470,12 +453,20 @@ class NationalBoostInferenceModel(BaseInferenceModel):
             Dict[Hour, Prediction]: Predictions for each forecast horizon
         """
         X = covariates.covariates.loc[self._config.forecast_horizon_hours]
-        predictions = {
-            forecast_horizon_hour: self.meta_model[forecast_horizon_hour].predict(
-                X.loc[[forecast_horizon_hour]]
-            )[0]
-            for forecast_horizon_hour in self._config.forecast_horizon_hours
-        }
+
+        predictions = {}
+        for forecast_horizon_hour in self._config.forecast_horizon_hours:
+            logger.debug(f'Running forecast for {forecast_horizon_hour}')
+
+            # get model
+            model = self.model_loader(forecast_horizon_hour)
+
+            # get results
+            one_results = model.predict(X.loc[[forecast_horizon_hour]])[0]
+            predictions[forecast_horizon_hour] = one_results
+
+            # discard model
+            del model
 
         predictions = {
             hour: self.process_model_output(
