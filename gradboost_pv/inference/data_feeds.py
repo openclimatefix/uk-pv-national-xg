@@ -282,10 +282,15 @@ class ProductionDataFeed(IterDataPipe):
         new_step = pd.to_timedelta(data["nwp"].step - delta)
         logger.debug(f" Steps to resample are {new_step}")
 
+        logger.debug("Load data into memory")  # This takes ~3 mins
+        data["nwp"].load()
+
         # change to new step and resample to 1 hour
         data["nwp"].coords["step"] = new_step
         logger.debug("Resampling to 1 hour")
-        data["nwp"] = data["nwp"].resample(step="1H").mean()  # This takes ~1 mins
+        process = psutil.Process(os.getpid())
+        logger.debug(f"Memory is {process.memory_info().rss / 10 ** 6} MB")
+        data["nwp"] = data["nwp"].resample(step="1H").mean()
         data["nwp"].init_time_utc.values = inference_time
 
         logger.debug(f'Final steps are {data["nwp"].step.values}')
