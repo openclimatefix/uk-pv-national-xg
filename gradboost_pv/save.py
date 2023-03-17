@@ -1,9 +1,11 @@
+""" Function to save results to datbase """
 import logging
 from datetime import timedelta
 
 import pandas as pd
 from nowcasting_datamodel.models.convert import convert_df_to_national_forecast
 from nowcasting_datamodel.save.update import update_all_forecast_latest
+from sqlalchemy.orm import Session
 
 import gradboost_pv
 from gradboost_pv.inference.utils import filter_forecasts_on_sun_elevation
@@ -11,7 +13,7 @@ from gradboost_pv.inference.utils import filter_forecasts_on_sun_elevation
 logger = logging.getLogger(__name__)
 
 
-def save_to_database(results_df: pd.DataFrame, start_hour_to_save: int, session: bool):
+def save_to_database(results_df: pd.DataFrame, start_hour_to_save: int, session: Session):
     """
     Method to save results to a database
     """
