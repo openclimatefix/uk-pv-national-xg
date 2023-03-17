@@ -1,10 +1,12 @@
 """S3 Interaction Utilities"""
 import logging
+import os
 from io import BytesIO
 from typing import Optional
 
 import boto3
 import joblib
+import psutil
 from botocore.exceptions import ClientError
 from xgboost import XGBRegressor
 
@@ -62,6 +64,10 @@ def load_model(s3_client, object_name: str, bucket_name: str = DEV_BUCKET_NAME) 
         model = joblib.load(f)
 
     assert isinstance(model, XGBRegressor)
+
+    process = psutil.Process(os.getpid())
+    logger.debug(f"Memory is {process.memory_info().rss / 10 ** 6} MB")
+
     return model
 
 

@@ -1,5 +1,6 @@
 """Datafeeds for model inference"""
 import logging
+import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -7,6 +8,7 @@ from typing import Iterator, Optional, Union
 
 import numpy as np
 import pandas as pd
+import psutil
 import pytz
 import s3fs
 import xarray as xr
@@ -67,6 +69,8 @@ class ProductionOpenNWPNetcdfIterDataPipe(IterDataPipe):
         # TODO - create a fix for this
         # prod data is y: 633, x: 449, training data was y: 704, x: 548, interpolate onto
         # the old coordinates.
+        process = psutil.Process(os.getpid())
+        logger.debug(f"Memory is {process.memory_info().rss / 10 ** 6} MB")
         x_coords, y_coords = load_nwp_coordinates()
 
         # there is some bug with extrapolation/interpolation - see below
