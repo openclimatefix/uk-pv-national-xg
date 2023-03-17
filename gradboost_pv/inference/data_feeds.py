@@ -288,11 +288,6 @@ class ProductionDataFeed(IterDataPipe):
         process = psutil.Process(os.getpid())
         logger.debug(f"Memory is {process.memory_info().rss / 10 ** 6} MB")
         data["nwp"] = data["nwp"].resample(step="1H").mean()  # This takes ~1 mins
-        
-        logger.debug("Taking mean")
-        process = psutil.Process(os.getpid())
-        logger.debug(f"Memory is {process.memory_info().rss / 10 ** 6} MB")
-        data["nwp"] = data["nwp"].mean()
         data["nwp"].init_time_utc.values = inference_time
 
         logger.debug(f'Final steps are {data["nwp"].step.values}')
