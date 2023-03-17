@@ -1,7 +1,6 @@
 """Datafeeds for model inference"""
 import logging
 import os
-import psutil
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -9,6 +8,7 @@ from typing import Iterator, Optional, Union
 
 import numpy as np
 import pandas as pd
+import psutil
 import pytz
 import s3fs
 import xarray as xr
