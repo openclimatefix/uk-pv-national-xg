@@ -111,7 +111,7 @@ def nwp_coords():
 
 @pytest.fixture
 def testing_inference_model(
-    model_config: NationalPVModelConfig, nwp_coords, s3_client
+    model_config: NationalPVModelConfig, nwp_coords, mock_model
 ) -> NationalBoostInferenceModel:
     """Set up model for inference pipeline testing
 
@@ -126,14 +126,14 @@ def testing_inference_model(
     x, y = nwp_coords
 
     def _model_loader_by_hour(hour) -> XGBRegressor:
-        return load_model(s3_client, build_object_name(hour))
+        return mock_model
 
     model = NationalBoostInferenceModel(model_config, _model_loader_by_hour, x, y)
     model.initialise()
     return model
 
 
-@pytest.mark.skip("Currently no access to AWS")
+# @pytest.mark.skip("Currently no access to AWS")
 def test_inference(testing_inference_model, mock_prod_datafeed, mock_testing_database_connection):
     """Test for model inference pipeline
 
