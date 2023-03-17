@@ -2,12 +2,16 @@
 import logging
 import os
 import pathlib
+from datetime import timedelta
 from pathlib import Path
 from typing import Optional
 
 import click
 from nowcasting_datamodel.connection import DatabaseConnection
 from nowcasting_datamodel.models.convert import convert_df_to_national_forecast
+from nowcasting_datamodel.save.update import (
+    update_all_forecast_latest,
+)
 from xgboost import XGBRegressor
 
 import gradboost_pv
@@ -82,12 +86,19 @@ logging.getLogger("s3fs").setLevel(logging.INFO)
     default=None,
     help="Optional AWS s3 Secret Key.",
 )
+@click.option(
+    "--start_hour_to_save",
+    type=int,
+    default=8,
+    help="From X hours out, we save the values in the forecast latest table",
+)
 def main(
     path_to_model_config: Path,
     path_to_datafeed_config: Path,
     write_to_database: bool = True,
     s3_access_key: Optional[str] = None,
     s3_secret_key: Optional[str] = None,
+    start_hour_to_save: Optional[int] = 8,
 ):
     """Entry point for inference script"""
 
@@ -157,6 +168,21 @@ def main(
             logger.debug("Adding forecast to database")
             session.add(forecast_sql)
             session.commit()
+
+            # only save 8 hour out, so we dont override PVnet
+            target_time_filter = forecast_sql.forecast_creation_time + timedelta(
+                hours=start_hour_to_save
+            )
+            forecast_sql.forecast_values = [
+                f for f in forecast_sql.forecast_values if f.target_time >= target_time_filter
+            ]
+            logger.debug(
+                f"Adding forecasts to latest, if target time is past {target_time_filter}. "
+                f"This will be {len(forecast_sql.forecast_values)} forecast values"
+            )
+            update_all_forecast_latest(
+                session=session, forecasts=forecasts, update_national=True, update_gsp=False
+            )
 
     logger.info("Done")
 
