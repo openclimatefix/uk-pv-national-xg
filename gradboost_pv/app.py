@@ -2,9 +2,9 @@
 import logging
 import os
 import pathlib
+from datetime import timedelta
 from pathlib import Path
 from typing import Optional
-from datetime import timedelta
 
 import click
 from nowcasting_datamodel.connection import DatabaseConnection
