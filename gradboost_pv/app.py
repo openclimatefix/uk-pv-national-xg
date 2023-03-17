@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 import click
+from nowcasting_datamodel.connection import DatabaseConnection
 from xgboost import XGBRegressor
 
 import gradboost_pv
@@ -138,7 +139,9 @@ def main(
     if not write_to_database:
         print(results_df)
     else:
-        save_to_database(results_df, start_hour_to_save, write_to_database)
+        connection = DatabaseConnection(url=os.getenv("DB_URL"))
+        with connection.get_session() as session:
+            save_to_database(results_df, start_hour_to_save, session=session)
 
     logger.info("Done")
 
