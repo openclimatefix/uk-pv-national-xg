@@ -1,12 +1,12 @@
 """S3 Interaction Utilities"""
 import logging
+import os
 from io import BytesIO
 from typing import Optional
 
-import psutil
-import os
 import boto3
 import joblib
+import psutil
 from botocore.exceptions import ClientError
 from xgboost import XGBRegressor
 
