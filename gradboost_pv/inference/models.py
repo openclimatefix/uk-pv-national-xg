@@ -456,7 +456,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
 
         predictions = {}
         for forecast_horizon_hour in self._config.forecast_horizon_hours:
-            logger.debug(f'Running forecast for {forecast_horizon_hour}')
+            logger.debug(f"Running forecast for {forecast_horizon_hour}")
 
             # get model
             model = self.model_loader(forecast_horizon_hour)
