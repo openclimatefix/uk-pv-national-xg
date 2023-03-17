@@ -140,7 +140,7 @@ def main(
             results_df["forecast_mw"] = results_df["forecast_kw"]
             results_df["target_datetime_utc"] = results_df["datetime_of_target_utc"]
 
-            logger.debug(results_df['forecast_mw'])
+            logger.debug(results_df[["forecast_mw", "target_datetime_utc"]])
 
             forecast_sql = convert_df_to_national_forecast(
                 forecast_values_df=results_df,
