@@ -18,7 +18,7 @@ def mock_model():
     model = XGBRegressor()
 
     # 33 features
-    xtrain = [[1]*33]
+    xtrain = [[1] * 33]
     ytrain = [1]
 
     model.fit(xtrain, ytrain)
@@ -36,5 +36,3 @@ def model_config() -> NationalPVModelConfig:
 def model_config_path() -> Path:
     """configuration yaml file."""
     return PATH_TO_TEST_MODEL_CONFIG
-
-
