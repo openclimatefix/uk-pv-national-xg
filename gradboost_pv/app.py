@@ -4,6 +4,7 @@ import os
 import pathlib
 from pathlib import Path
 from typing import Optional
+from datetime import timedelta
 
 import click
 from nowcasting_datamodel.connection import DatabaseConnection
@@ -98,7 +99,7 @@ def main(
     write_to_database: bool = True,
     s3_access_key: Optional[str] = None,
     s3_secret_key: Optional[str] = None,
-    start_hour_to_save: Optional[int] = 8
+    start_hour_to_save: Optional[int] = 8,
 ):
     """Entry point for inference script"""
 
@@ -170,7 +171,13 @@ def main(
             session.commit()
 
             # only save 8 hour out, so we dont override PVnet
-            forecast_sql.forecast_values = forecast_sql.forecast_values[start_hour_to_save:]
+            target_time_filter = forecast_sql.forecast_creation_time + timedelta(
+                hours=start_hour_to_save
+            )
+            forecast_sql.forecast_values = [
+                f for f in forecast_sql.forecast_values if f.target_time >= target_time_filter
+            ]
+            logger.debug(f"Adding forecasts to latest, if target time is past {target_time_filter}")
             update_all_forecast_latest(
                 session=session, forecasts=forecasts, update_national=True, update_gsp=False
             )
