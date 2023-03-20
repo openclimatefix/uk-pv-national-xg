@@ -282,7 +282,10 @@ class ProductionDataFeed(IterDataPipe):
         old_steps = data["nwp"].step.values
         logger.debug(f"Old steps are {old_steps}")
         new_step = pd.to_timedelta(data["nwp"].step - delta)
-        logger.debug(f" Steps to resample are {new_step}")
+        data["nwp"].coords["step"] = new_step
+
+        logger.debug('Removing negative step values')
+        data['nwp'] = data['nwp'].sel(step=slice(0, new_step[-1]))
 
         process = psutil.Process(os.getpid())
         logger.debug(f"Memory is {process.memory_info().rss / 10 ** 6} MB")
@@ -290,7 +293,6 @@ class ProductionDataFeed(IterDataPipe):
         data["nwp"].load()
 
         # change to new step and resample to 1 hour
-        data["nwp"].coords["step"] = new_step
         logger.debug("Resampling to 1 hour")
         process = psutil.Process(os.getpid())
         logger.debug(f"Memory is {process.memory_info().rss / 10 ** 6} MB")
