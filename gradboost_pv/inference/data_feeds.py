@@ -1,6 +1,8 @@
 """Datafeeds for model inference"""
 import logging
 import os
+import io
+import fsspec
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -282,6 +284,8 @@ class ProductionDataFeed(IterDataPipe):
         new_step = pd.to_timedelta(data["nwp"].step - delta)
         logger.debug(f" Steps to resample are {new_step}")
 
+        process = psutil.Process(os.getpid())
+        logger.debug(f"Memory is {process.memory_info().rss / 10 ** 6} MB")
         logger.debug("Load data into memory")  # This takes ~3 mins
         data["nwp"].load()
 
