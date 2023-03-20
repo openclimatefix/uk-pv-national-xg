@@ -283,8 +283,8 @@ class ProductionDataFeed(IterDataPipe):
         data["nwp"].coords["step"] = new_step
 
         non_negative_steps = [step for step in new_step if step >= timedelta(minutes=0)]
-        logger.debug(f'Removing negative step values {non_negative_steps}')
-        data['nwp'] = data['nwp'].sel(step=slice(non_negative_steps[0], non_negative_steps[-1]))
+        logger.debug(f"Removing negative step values {non_negative_steps}")
+        data["nwp"] = data["nwp"].sel(step=slice(non_negative_steps[0], non_negative_steps[-1]))
 
         process = psutil.Process(os.getpid())
         logger.debug(f"Memory is {process.memory_info().rss / 10 ** 6} MB")
