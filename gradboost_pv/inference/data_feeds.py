@@ -257,14 +257,15 @@ class ProductionDataFeed(IterDataPipe):
         logger.debug("Getting Data")
 
         data = xgnational_production(self.path_to_configuration_file)
-        inference_time = self.get_inference_time()
+        yield from self.post_process(data)
 
+    def post_process(self, data):
+        """Post process data"""
+        inference_time = self.get_inference_time()
         logger.debug(f"{inference_time=}")
         logger.debug(f"{data['nwp'].init_time_utc.values=}")
-
         logger.debug(data["gsp"])
         logger.debug(data["nwp"])
-
         logger.debug("The following times should be the same, so will adjust if not")
         logger.debug(f"{inference_time=}")
         logger.debug(f"{data['nwp'].init_time_utc.values=}")
@@ -280,23 +281,41 @@ class ProductionDataFeed(IterDataPipe):
         old_steps = data["nwp"].step.values
         logger.debug(f"Old steps are {old_steps}")
         new_step = pd.to_timedelta(data["nwp"].step - delta)
-        logger.debug(f" Steps to resample are {new_step}")
-
+        data["nwp"].coords["step"] = new_step
+        non_negative_steps = [step for step in new_step if step >= timedelta(minutes=0)]
+        logger.debug(f"Removing negative step values {non_negative_steps}")
+        data["nwp"] = data["nwp"].sel(step=slice(non_negative_steps[0], non_negative_steps[-1]))
         process = psutil.Process(os.getpid())
         logger.debug(f"Memory is {process.memory_info().rss / 10 ** 6} MB")
         logger.debug("Load data into memory")  # This takes ~3 mins
-        data["nwp"].load()
+
+        # load data into memory
+        data["nwp"] = self.load(data["nwp"])
 
         # change to new step and resample to 1 hour
-        data["nwp"].coords["step"] = new_step
         logger.debug("Resampling to 1 hour")
         process = psutil.Process(os.getpid())
         logger.debug(f"Memory is {process.memory_info().rss / 10 ** 6} MB")
         data["nwp"] = data["nwp"].resample(step="1H").mean()
         data["nwp"].init_time_utc.values = inference_time
-
         logger.debug(f'Final steps are {data["nwp"].step.values}')
 
         yield DataInput(
             nwp=data["nwp"], gsp=data["gsp"], forecast_intitation_datetime_utc=inference_time
         )
+
+    def load(self, data: xr.Dataset):
+        """Load the data into memory"""
+        # By loading by step by step, this seems to keep the memory lower,
+        # roughly this reduces it from 9 GB to 3 GB
+        # The old command was data["nwp"].load()
+        steps = []
+        step_values = data.step.values
+        for i in range(len(step_values)):
+            logger.debug(f"Loading step {step_values[i]}. {i} out of {len(step_values)}")
+            step = data.sel(step=step_values[i])
+            step.load()
+            steps.append(step)
+        data_xr = xr.concat(steps, "step")
+
+        return data_xr
