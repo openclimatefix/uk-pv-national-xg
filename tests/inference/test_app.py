@@ -8,7 +8,6 @@ from torchdata.datapipes import functional_datapipe
 from torchdata.datapipes.iter import IterDataPipe
 from xgboost import XGBRegressor
 
-import gradboost_pv
 from gradboost_pv.inference.data_feeds import DataInput
 from gradboost_pv.inference.models import (
     NationalBoostInferenceModel,
@@ -18,9 +17,6 @@ from gradboost_pv.inference.models import (
 from gradboost_pv.inference.run import NationalBoostModelInference
 from gradboost_pv.models.utils import load_nwp_coordinates
 
-PATH_TO_TEST_DATA_DIRECTORY = Path(gradboost_pv.__file__).parents[1] / "data" / "test"
-PATH_TO_SAMPLE_NWP = PATH_TO_TEST_DATA_DIRECTORY / "sample_prod_nwp.zarr"
-PATH_TO_SAMPLE_GSP = PATH_TO_TEST_DATA_DIRECTORY / "sample_prod_gsp.zarr"
 
 
 @functional_datapipe("mock_production_datafeed")

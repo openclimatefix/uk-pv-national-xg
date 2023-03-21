@@ -5,10 +5,12 @@ import pytest
 import xarray as xr
 from xgboost import XGBRegressor
 
+import gradboost_pv
 from gradboost_pv.inference.models import NationalPVModelConfig
-from gradboost_pv.models.s3 import build_object_name, create_s3_client, load_model
-from tests.inference.test_app import PATH_TO_SAMPLE_NWP, PATH_TO_SAMPLE_GSP
 
+PATH_TO_TEST_DATA_DIRECTORY = Path(gradboost_pv.__file__).parents[1] / "data" / "test"
+PATH_TO_SAMPLE_NWP = PATH_TO_TEST_DATA_DIRECTORY / "sample_prod_nwp.zarr"
+PATH_TO_SAMPLE_GSP = PATH_TO_TEST_DATA_DIRECTORY / "sample_prod_gsp.zarr"
 MODEL_FORECAST_HORIZON_HOUR = 5
 PATH_TO_TEST_MODEL_CONFIG = Path(__file__).parents[1] / "configs" / "test_model_config.yaml"
 
