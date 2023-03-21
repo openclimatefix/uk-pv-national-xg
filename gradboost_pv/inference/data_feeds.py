@@ -289,7 +289,9 @@ class ProductionDataFeed(IterDataPipe):
         process = psutil.Process(os.getpid())
         logger.debug(f"Memory is {process.memory_info().rss / 10 ** 6} MB")
         logger.debug("Load data into memory")  # This takes ~3 mins
-        data["nwp"].load()
+
+        # load data into memory
+        data["nwp"] = self.load(data['nwp'])
 
         # change to new step and resample to 1 hour
         logger.debug("Resampling to 1 hour")
@@ -303,3 +305,19 @@ class ProductionDataFeed(IterDataPipe):
         yield DataInput(
             nwp=data["nwp"], gsp=data["gsp"], forecast_intitation_datetime_utc=inference_time
         )
+
+    def load(self, data: xr.Dataset):
+        """ Load the data into memory """
+        # By loading by step by step, this seems to keep the memory lower,
+        # roughly this reduces it from 9 GB to 3 GB
+        # The old command was data["nwp"].load()
+        steps = []
+        step_values = data.step.values
+        for i in range(len(step_values)):
+            logger.debug(f'Loading step {step_values[i]}')
+            step = data.sel(step=step_values[i])
+            step.load()
+            steps.append(step)
+        data_xr = xr.concat(steps, "step")
+
+        return data_xr
