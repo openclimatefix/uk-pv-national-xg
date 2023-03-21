@@ -283,15 +283,15 @@ class ProductionDataFeed(IterDataPipe):
         data["nwp"].coords["step"] = new_step
 
         non_negative_steps = [step for step in new_step if step >= timedelta(minutes=0)]
-        logger.debug(f'Removing negative step values {non_negative_steps}')
-        data['nwp'] = data['nwp'].sel(step=slice(non_negative_steps[0], non_negative_steps[-1]))
+        logger.debug(f"Removing negative step values {non_negative_steps}")
+        data["nwp"] = data["nwp"].sel(step=slice(non_negative_steps[0], non_negative_steps[-1]))
 
         process = psutil.Process(os.getpid())
         logger.debug(f"Memory is {process.memory_info().rss / 10 ** 6} MB")
         logger.debug("Load data into memory")  # This takes ~3 mins
 
         # load data into memory
-        data["nwp"] = self.load(data['nwp'])
+        data["nwp"] = self.load(data["nwp"])
 
         # change to new step and resample to 1 hour
         logger.debug("Resampling to 1 hour")
@@ -307,14 +307,14 @@ class ProductionDataFeed(IterDataPipe):
         )
 
     def load(self, data: xr.Dataset):
-        """ Load the data into memory """
+        """Load the data into memory"""
         # By loading by step by step, this seems to keep the memory lower,
         # roughly this reduces it from 9 GB to 3 GB
         # The old command was data["nwp"].load()
         steps = []
         step_values = data.step.values
         for i in range(len(step_values)):
-            logger.debug(f'Loading step {step_values[i]}')
+            logger.debug(f"Loading step {step_values[i]}")
             step = data.sel(step=step_values[i])
             step.load()
             steps.append(step)
