@@ -18,7 +18,6 @@ from gradboost_pv.inference.run import NationalBoostModelInference
 from gradboost_pv.models.utils import load_nwp_coordinates
 
 
-
 @functional_datapipe("mock_production_datafeed")
 class MockProdDataPipe(IterDataPipe):
     """Mock Datapipe for inference testing"""
