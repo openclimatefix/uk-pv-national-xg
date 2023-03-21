@@ -257,14 +257,15 @@ class ProductionDataFeed(IterDataPipe):
         logger.debug("Getting Data")
 
         data = xgnational_production(self.path_to_configuration_file)
-        inference_time = self.get_inference_time()
+        yield from self.post_process(data)
 
+    def post_process(self, data):
+        """Post process data"""
+        inference_time = self.get_inference_time()
         logger.debug(f"{inference_time=}")
         logger.debug(f"{data['nwp'].init_time_utc.values=}")
-
         logger.debug(data["gsp"])
         logger.debug(data["nwp"])
-
         logger.debug("The following times should be the same, so will adjust if not")
         logger.debug(f"{inference_time=}")
         logger.debug(f"{data['nwp'].init_time_utc.values=}")
@@ -281,11 +282,9 @@ class ProductionDataFeed(IterDataPipe):
         logger.debug(f"Old steps are {old_steps}")
         new_step = pd.to_timedelta(data["nwp"].step - delta)
         data["nwp"].coords["step"] = new_step
-
         non_negative_steps = [step for step in new_step if step >= timedelta(minutes=0)]
         logger.debug(f"Removing negative step values {non_negative_steps}")
         data["nwp"] = data["nwp"].sel(step=slice(non_negative_steps[0], non_negative_steps[-1]))
-
         process = psutil.Process(os.getpid())
         logger.debug(f"Memory is {process.memory_info().rss / 10 ** 6} MB")
         logger.debug("Load data into memory")  # This takes ~3 mins
@@ -299,7 +298,6 @@ class ProductionDataFeed(IterDataPipe):
         logger.debug(f"Memory is {process.memory_info().rss / 10 ** 6} MB")
         data["nwp"] = data["nwp"].resample(step="1H").mean()
         data["nwp"].init_time_utc.values = inference_time
-
         logger.debug(f'Final steps are {data["nwp"].step.values}')
 
         yield DataInput(

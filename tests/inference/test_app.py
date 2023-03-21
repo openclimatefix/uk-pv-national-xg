@@ -23,30 +23,6 @@ PATH_TO_SAMPLE_NWP = PATH_TO_TEST_DATA_DIRECTORY / "sample_prod_nwp.zarr"
 PATH_TO_SAMPLE_GSP = PATH_TO_TEST_DATA_DIRECTORY / "sample_prod_gsp.zarr"
 
 
-@pytest.fixture
-def sample_prod_nwp_data() -> xr.Dataset:
-    """Loads a sample NWP [x, y] observation from file.
-
-    This data looks like the (processed) NWP data from prod aws.
-    Returns:
-        xr.Dataset: NWP Observation.
-    """
-    nwp = xr.open_zarr(PATH_TO_SAMPLE_NWP)
-    return nwp
-
-
-@pytest.fixture
-def sample_prod_gsp_data() -> xr.Dataset:
-    """Loads a sample GSP observation from file.
-
-    This data looks like the prod GSP data read from database.
-    Returns:
-        xr.Dataset: GSP Observations.
-    """
-    gsp = xr.open_zarr(PATH_TO_SAMPLE_GSP)
-    return gsp
-
-
 @functional_datapipe("mock_production_datafeed")
 class MockProdDataPipe(IterDataPipe):
     """Mock Datapipe for inference testing"""
