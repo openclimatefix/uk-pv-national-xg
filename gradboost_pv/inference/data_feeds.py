@@ -314,7 +314,7 @@ class ProductionDataFeed(IterDataPipe):
         steps = []
         step_values = data.step.values
         for i in range(len(step_values)):
-            logger.debug(f'Loading step {step_values[i]}')
+            logger.debug(f'Loading step {step_values[i]}. {i} out of {len(step_values)}')
             step = data.sel(step=step_values[i])
             step.load()
             steps.append(step)
