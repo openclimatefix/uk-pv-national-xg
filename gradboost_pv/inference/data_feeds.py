@@ -1,8 +1,6 @@
 """Datafeeds for model inference"""
 import logging
 import os
-import io
-import fsspec
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
