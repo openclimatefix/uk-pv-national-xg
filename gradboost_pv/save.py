@@ -24,8 +24,10 @@ def save_to_database(results_df: pd.DataFrame, start_hour_to_save: int, session:
 
     # interpolate to 30 minutes
     results_df.set_index("datetime_of_target_utc", drop=True, inplace=True)
-    results_df = pd.DataFrame(results_df['forecast_mw'].resample("30T").interpolate(method='linear'))
-    results_df['target_datetime_utc'] = results_df.index
+    results_df = pd.DataFrame(
+        results_df["forecast_mw"].resample("30T").interpolate(method="linear")
+    )
+    results_df["target_datetime_utc"] = results_df.index
 
     logger.debug(results_df[["forecast_mw", "target_datetime_utc"]])
 
