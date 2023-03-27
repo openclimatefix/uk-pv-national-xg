@@ -19,12 +19,13 @@ def save_to_database(results_df: pd.DataFrame, start_hour_to_save: int, session:
     """
 
     # TODO fix, wrong units somewhere
-    results_df["forecast_mw"] = results_df["forecast_kw"]
-    results_df["target_datetime_utc"] = results_df["datetime_of_target_utc"]
+    results_df["forecast_mw"] = results_df["forecast_kw"].astype(float)
+    results_df["target_datetime_utc"] = pd.to_datetime(results_df["datetime_of_target_utc"])
 
     # interpolate to 30 minutes
-    results_df = results_df.set_index("target_datetime_utc")
-    results_df = results_df.resample("30T").interpolate()
+    results_df.set_index("datetime_of_target_utc", drop=True, inplace=True)
+    results_df = pd.DataFrame(results_df['forecast_mw'].resample("30T").interpolate(method='linear'))
+    results_df['target_datetime_utc'] = results_df.index
 
     logger.debug(results_df[["forecast_mw", "target_datetime_utc"]])
 
