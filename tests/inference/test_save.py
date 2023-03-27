@@ -11,7 +11,7 @@ from nowcasting_datamodel.models import ForecastSQL, ForecastValueSQL, ForecastV
 @freeze_time("2023-01-01")
 def test_save_to_database(db_session):
     results_df = pd.DataFrame(
-        columns=[["datetime_of_target_utc", "forecast_kw"]],
+        columns=["datetime_of_target_utc", "forecast_kw"],
         data=[
             [datetime(2023, 1, 1), 7.3],
             [datetime(2023, 1, 1, 1), 8.3],
@@ -33,7 +33,7 @@ def test_save_to_database_reduce(db_session):
     db_session.query(ForecastSQL).delete()
 
     results_df = pd.DataFrame(
-        columns=[["datetime_of_target_utc", "forecast_kw"]],
+        columns=["datetime_of_target_utc", "forecast_kw"],
         data=[
             [datetime(2023, 1, 1), 7.3],
             [datetime(2023, 1, 1, 1), 8.3],
