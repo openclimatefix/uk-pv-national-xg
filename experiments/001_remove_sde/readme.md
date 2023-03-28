@@ -3,11 +3,11 @@
 In live the NWP conusmer only has `sd` not `sde` so we need to remove this from the config
 
 Let's compare the results of
-1. training with `sde` and running inference 
+1. training with `sde` and running inference
 2. training with `sde` and running inference with no `sde` data
 3. training with out `sde`
 
-Resutls MAE test set. SO its better to remove SDE. 
+Resutls MAE test set. SO its better to remove SDE.
 
 | Horizon | SDE   | SDE not in inference | no SDE |
 |---------|-------|---------|--------|

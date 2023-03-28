@@ -1,8 +1,8 @@
 """Model training script"""
+import logging
 from argparse import ArgumentParser, BooleanOptionalAction
 from pathlib import Path
 from typing import Dict
-import logging
 
 import numpy as np
 import xarray as xr
@@ -26,9 +26,9 @@ from gradboost_pv.utils.typing import Hour
 
 logger = getLogger(__name__)
 
-formatString = '[%(levelname)s][%(asctime)s] : %(message)s'  # specify a format string
+formatString = "[%(levelname)s][%(asctime)s] : %(message)s"  # specify a format string
 logLevel = logging.INFO  # specify standard log level
-logging.basicConfig(format=formatString, level=logLevel, datefmt='%Y-%m-%d %I:%M:%S')
+logging.basicConfig(format=formatString, level=logLevel, datefmt="%Y-%m-%d %I:%M:%S")
 
 
 def parse_args():
