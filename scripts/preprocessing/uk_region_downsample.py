@@ -24,7 +24,7 @@ from gradboost_pv.utils.logger import getLogger
 logger = getLogger("uk-region-filter-nwp-data")
 
 formatString = "[%(levelname)s][%(asctime)s] : %(message)s"  # specify a format string
-logLevel = logging.INFO  # specify standard log level
+logLevel = logging.DEBUG  # specify standard log level
 logging.basicConfig(format=formatString, level=logLevel, datefmt="%Y-%m-%d %I:%M:%S")
 
 

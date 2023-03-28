@@ -203,6 +203,7 @@ class NWPUKRegionMaskedDatasetBuilder:
         mask = generate_polygon_mask(self.nwp.coords["x"], self.nwp.coords["y"], uk_polygon)
 
         # convert numpy array to xarray mask for a 1 variable, 1 step times series of (x,y) coords
+        logger.debug('Making mask')
         mask = xr.DataArray(
             np.tile(mask.T, (len(self.nwp.coords["init_time"]), 1, 1)),
             dims=["init_time", "x", "y"],
