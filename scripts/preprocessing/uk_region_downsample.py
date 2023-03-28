@@ -85,6 +85,9 @@ def main(base_save_directory: Path):
             .values
         )
 
+        logger.debug(f'{evaluation_timeseries=}')
+        logger.debug(f'{evaluation_timeseries.shape=}')
+
         dataset_builder = NWPUKRegionMaskedDatasetBuilder(
             _nwp,
             evaluation_timeseries,
