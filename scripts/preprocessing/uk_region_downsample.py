@@ -59,8 +59,8 @@ def main(base_save_directory: Path):
     gsp = xr.open_zarr(GSP_FPATH)
     logger.info("Loading NWP data")
     nwp = xr.open_zarr(NWP_FPATH)
-    logger.info("chunking NWP data")
-    nwp = nwp.chunk({"step": 1, "variable": 1, "init_time": 50})
+    # logger.info("chunking NWP data")
+    # nwp = nwp.chunk({"step": 1, "variable": 1, "init_time": 50})
 
     # if we consider all nwp together the polygon mask is too big to fit in memory
     # instead, iterate over each year in the dataset and save locally
