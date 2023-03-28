@@ -1,6 +1,7 @@
 """Script for processing raw NWP data"""
 import datetime as dt
 import itertools
+import logging
 from argparse import ArgumentParser
 from pathlib import Path
 
@@ -21,6 +22,10 @@ from gradboost_pv.preprocessing.region_filtered import (
 from gradboost_pv.utils.logger import getLogger
 
 logger = getLogger("uk-region-filter-nwp-data")
+
+formatString = "[%(levelname)s][%(asctime)s] : %(message)s"  # specify a format string
+logLevel = logging.INFO  # specify standard log level
+logging.basicConfig(format=formatString, level=logLevel, datefmt="%Y-%m-%d %I:%M:%S")
 
 
 FORECAST_HORIZONS = range(NWP_STEP_HORIZON)
@@ -50,6 +55,7 @@ def main(base_save_directory: Path):
     Script to preprocess NWP data, overnight
     """
 
+    logger.info("Loading GSP and NWP data")
     gsp = xr.open_zarr(GSP_FPATH)
     nwp = xr.open_zarr(NWP_FPATH)
     nwp = nwp.chunk({"step": 1, "variable": 1, "init_time": 50})
