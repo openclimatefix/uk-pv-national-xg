@@ -59,6 +59,7 @@ def main(base_save_directory: Path):
     gsp = xr.open_zarr(GSP_FPATH)
     logger.info("Loading NWP data")
     nwp = xr.open_zarr(NWP_FPATH)
+    logger.info("chunking NWP data")
     nwp = nwp.chunk({"step": 1, "variable": 1, "init_time": 50})
 
     # if we consider all nwp together the polygon mask is too big to fit in memory
@@ -68,7 +69,7 @@ def main(base_save_directory: Path):
     date_years = [dt.datetime(year=year, month=1, day=1) for year in years]
 
     for i in range(len(years) - 1):
-        logger.debug('Loading NWP data for year %s', years[i])
+        logger.info('Loading NWP data for year %s', years[i])
         year = years[i]
         start_datetime, end_datetime = date_years[i], date_years[i + 1]
         _nwp = nwp.sel(init_time=slice(start_datetime, end_datetime))
@@ -91,7 +92,7 @@ def main(base_save_directory: Path):
 
         iter_params = list(itertools.product(DEFAULT_VARIABLES_FOR_PROCESSING, FORECAST_HORIZONS))
         for var, step in iter_params:
-            logger.debug(f"Processing var: {var}, step: {step}")
+            logger.info(f"Processing var: {var}, step: {step}")
             uk_region, outer_region = dataset_builder.build_region_masked_covariates(var, step)
 
             inner_fpath, outer_fpath = build_local_save_path(
