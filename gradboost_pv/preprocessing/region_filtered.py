@@ -85,6 +85,8 @@ def process_eso_uk_multipolygon(uk_shape: gpd.GeoDataFrame) -> MultiPolygon:
     Returns:
         MultiPolygon: Object representing the UK-region.
     """
+    logger.info("Processing UK region shapefile")
+
     concat_poly = unary_union(uk_shape["geometry"].values)
 
     return MultiPolygon(Polygon(p.exterior) for p in concat_poly.geoms)
@@ -104,6 +106,8 @@ def generate_polygon_mask(
         np.ndarray: 2-D array where each (x_i, y_i) value signifies if the point (x_i, y_i) belong
         to the polygon.
     """
+    logger.info("Generating polygon mask")
+
     coords = list(map(lambda x: Point(x[0], x[1]), itertools.product(coordinates_x, coordinates_y)))
 
     # create a mask for belonging to UK region or not
