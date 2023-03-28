@@ -148,7 +148,7 @@ def check_points_in_multipolygon_multiprocessed(
     Returns:
         np.ndarray: _description_
     """
-    filename = '.data/uk_region_mask_train.npy'
+    filename = './data/uk_region_mask_train.npy'
     if os.path.exists(filename):
         logger.debug('Loading UK region mask from file')
         return np.load(filename)
