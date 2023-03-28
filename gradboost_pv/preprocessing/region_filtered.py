@@ -25,7 +25,7 @@ DEFAULT_VARIABLES_FOR_PROCESSING = [
     "hcct",
     "lcc",
     "t",
-    "sde",
+    # "sde",
     "wdir10",
 ]
 
