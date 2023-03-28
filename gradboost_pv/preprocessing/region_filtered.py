@@ -1,5 +1,6 @@
 """Preprocess NWP data using geospatial mask"""
 import itertools
+import logging
 import multiprocessing as mp
 from pathlib import Path
 from typing import Iterable, Tuple, Union
@@ -13,6 +14,9 @@ from shapely.geometry import MultiPolygon, Point, Polygon
 from shapely.ops import unary_union
 
 from gradboost_pv.models.utils import DEFAULT_DIRECTORY_TO_PROCESSED_NWP
+
+
+logger = logging.getLogger(__name__)
 
 ESO_GEO_JSON_URL = (
     "https://data.nationalgrideso.com/backend/dataset/2810092e-d4b2-472f-b955-d8bea01f9ec0/"
@@ -187,6 +191,9 @@ class NWPUKRegionMaskedDatasetBuilder:
         Returns:
             xr.DataArray: UK-region mask, on NWP (x,y) coords
         """
+
+        logger.info('Loading UK region mask from National Grid ESO')
+
         uk_polygon = query_eso_geojson()
         uk_polygon = process_eso_uk_multipolygon(uk_polygon)
         mask = generate_polygon_mask(self.nwp.coords["x"], self.nwp.coords["y"], uk_polygon)
