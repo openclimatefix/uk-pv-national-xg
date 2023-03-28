@@ -4,6 +4,7 @@ import logging
 import multiprocessing as mp
 from pathlib import Path
 from typing import Iterable, Tuple, Union
+import os
 
 import geopandas as gpd
 import numpy as np
@@ -147,12 +148,22 @@ def check_points_in_multipolygon_multiprocessed(
     Returns:
         np.ndarray: _description_
     """
+    filename = '.data/uk_region_mask_train.npy'
+    if os.path.exists(filename):
+        logger.debug('Loading UK region mask from file')
+        return np.load(filename)
     items = [(point, polygon) for point in points]
     results = list()
     with mp.Pool(num_processes) as pool:
         for result in pool.starmap(check_point_in_multipolygon, items):
             results.append(result)
-    return np.asarray(results)
+
+    a = np.asarray(results)
+
+    logger.debug(f'Saving UK region mask from file {filename}')
+    np.save('.data/uk_region_mask_train.npy', a)
+
+    return a
 
 
 def _process_nwp(
