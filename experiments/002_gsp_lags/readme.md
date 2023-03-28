@@ -19,4 +19,4 @@ Currently we use 1 hour, 2 hour and 24 hour lags. Lets add a few more
 | 24      |  0.025     | 0.025 | 0.025      | 0.025           |
 | 36      |  0.026     | 0.026 | 0.026      | 0.026           |
 
-So its slightly better to add the 3 hour too, but it doesn't make too much difference. 
+So its slightly better to add the 3 hour too, but it doesn't make too much difference.
