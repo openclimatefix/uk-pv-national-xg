@@ -55,8 +55,9 @@ def main(base_save_directory: Path):
     Script to preprocess NWP data, overnight
     """
 
-    logger.info("Loading GSP and NWP data")
+    logger.info("Loading GSP  data")
     gsp = xr.open_zarr(GSP_FPATH)
+    logger.info("Loading NWP data")
     nwp = xr.open_zarr(NWP_FPATH)
     nwp = nwp.chunk({"step": 1, "variable": 1, "init_time": 50})
 
@@ -67,6 +68,7 @@ def main(base_save_directory: Path):
     date_years = [dt.datetime(year=year, month=1, day=1) for year in years]
 
     for i in range(len(years) - 1):
+        logger.debug('Loading NWP data for year %s', years[i])
         year = years[i]
         start_datetime, end_datetime = date_years[i], date_years[i + 1]
         _nwp = nwp.sel(init_time=slice(start_datetime, end_datetime))
@@ -89,6 +91,7 @@ def main(base_save_directory: Path):
 
         iter_params = list(itertools.product(DEFAULT_VARIABLES_FOR_PROCESSING, FORECAST_HORIZONS))
         for var, step in iter_params:
+            logger.debug(f"Processing var: {var}, step: {step}")
             uk_region, outer_region = dataset_builder.build_region_masked_covariates(var, step)
 
             inner_fpath, outer_fpath = build_local_save_path(
