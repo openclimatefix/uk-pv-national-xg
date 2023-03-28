@@ -161,7 +161,7 @@ def check_points_in_multipolygon_multiprocessed(
     a = np.asarray(results)
 
     logger.debug(f'Saving UK region mask from file {filename}')
-    np.save('.data/uk_region_mask_train.npy', a)
+    np.save('./data/uk_region_mask_train.npy', a)
 
     return a
 
