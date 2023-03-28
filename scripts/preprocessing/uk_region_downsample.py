@@ -75,6 +75,7 @@ def main(base_save_directory: Path):
         _nwp = nwp.sel(init_time=slice(start_datetime, end_datetime))
 
         # time points to interpolate our nwp data onto.
+        logger.info('Loading GSP datetimes for year %s', years[i])
         evaluation_timeseries = (
             gsp.coords["datetime_gmt"]
             .where(
