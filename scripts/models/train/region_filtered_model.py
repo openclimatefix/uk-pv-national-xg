@@ -2,6 +2,7 @@
 from argparse import ArgumentParser, BooleanOptionalAction
 from pathlib import Path
 from typing import Dict
+import logging
 
 import numpy as np
 import xarray as xr
@@ -24,6 +25,10 @@ from gradboost_pv.utils.logger import getLogger
 from gradboost_pv.utils.typing import Hour
 
 logger = getLogger(__name__)
+
+formatString = '[%(levelname)s][%(asctime)s] : %(message)s'  # specify a format string
+logLevel = logging.INFO  # specify standard log level
+logging.basicConfig(format=formatString, level=logLevel, datefmt='%Y-%m-%d %I:%M:%S')
 
 
 def parse_args():
@@ -74,6 +79,7 @@ def main(path_to_processed_nwp: Path, nwp_variables: list[str]) -> Dict[Hour, Ex
     results = dict()
 
     for forecast_horizon_hour in range(0, 37):
+        print(forecast_horizon_hour)
         # independently fit an XGBoost model for each forecast horizon
         processed_nwp = load_all_variable_slices(
             forecast_horizon_hour, nwp_variables, directory=path_to_processed_nwp
@@ -85,7 +91,7 @@ def main(path_to_processed_nwp: Path, nwp_variables: list[str]) -> Dict[Hour, Ex
 
         results[forecast_horizon_hour] = training_results
 
-        logger.info(f"Trained model for {forecast_horizon_hour} hour forecast")
+        logger.info(f"Trained model for {forecast_horizon_hour} hour forecast. {training_results=}")
 
     return results
 
@@ -109,4 +115,4 @@ if __name__ == "__main__":
             save_result = save_model(
                 client, object_name, results.model, overwrite_current=args.s3_overwrite_current
             )
-            logger.error(f"Failure saving xgboost model with filename {object_name}.")
+            logger.error(f"Saved xgboost model with filename {object_name}.")

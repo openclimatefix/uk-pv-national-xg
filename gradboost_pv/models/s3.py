@@ -13,6 +13,7 @@ from xgboost import XGBRegressor
 logger = logging.getLogger(__name__)
 
 DEV_BUCKET_NAME = "nowcasting-national-forecaster-models-development"
+MODEL = 'v1'
 
 
 def build_object_name(forecast_horizon_hour: int) -> str:
@@ -56,6 +57,7 @@ def load_model(s3_client, object_name: str, bucket_name: str = DEV_BUCKET_NAME) 
         XGBRegressor: NationalBoost model for specific forecast horizon
     """
 
+    object_name = f"{MODEL}/{object_name}"
     logger.debug(f"Going to load model from {bucket_name=} {object_name=}")
 
     with BytesIO() as f:
@@ -90,6 +92,8 @@ def save_model(
     Returns:
         bool: outcome of saving, True equates to success.
     """
+
+    object_name = f"{MODEL}/{object_name}"
 
     bucket_contents = s3_client.list_objects(Bucket=bucket_name)
     keys = (
