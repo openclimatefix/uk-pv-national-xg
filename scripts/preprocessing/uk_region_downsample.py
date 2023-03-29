@@ -68,17 +68,20 @@ def main(base_save_directory: Path):
     # instead, iterate over each year in the dataset and save locally
 
     years = pd.DatetimeIndex(nwp.init_time.values).year.unique().values
-    years.append(years[-1] + 1)
     date_years = [dt.datetime(year=year, month=1, day=1) for year in years]
 
-    for i in range(len(years) - 1):
-        logger.info('Loading NWP data for year %s', years[i])
-        year = years[i]
+    # add the next year so that we include over the last year in the data
+    date_years.append(dt.datetime(year=years[-1] + 1, month=1, day=1))
+
+    for i in range(len(date_years) - 1):
+
+        year = date_years[i].year
+        logger.info('Loading NWP data for year %s', year)
         start_datetime, end_datetime = date_years[i], date_years[i + 1]
         _nwp = nwp.sel(init_time=slice(start_datetime, end_datetime))
 
         # time points to interpolate our nwp data onto.
-        logger.info('Loading GSP datetimes for year %s', years[i])
+        logger.info('Loading GSP datetimes for year %s', year)
         evaluation_timeseries = (
             gsp.coords["datetime_gmt"]
             .where(
