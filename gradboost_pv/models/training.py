@@ -29,7 +29,7 @@ DEFFAULT_HYPARAM_CONFIG = {
     "max_depth": 80,
     "max_leaves": 0,
     "min_child_weight": 5,
-    "n_estimators": 750,
+    "n_estimators": 1250,
     "n_jobs": -1,
     "num_parallel_tree": 1,
     "predictor": "auto",
