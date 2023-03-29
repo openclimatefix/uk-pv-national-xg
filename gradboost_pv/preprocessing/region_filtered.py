@@ -22,7 +22,7 @@ ESO_GEO_JSON_URL = (
 # processing takes quite a long time, so take a subset for now.
 DEFAULT_VARIABLES_FOR_PROCESSING = [
     "dswrf",
-    "hcct",
+    # "hcct",
     "lcc",
     "t",
     # "sde",

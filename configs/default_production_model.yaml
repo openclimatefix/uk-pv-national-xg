@@ -42,8 +42,6 @@ required_model_covariates:
   [
     "dswrf_within",
     "dswrf_outer",
-    "hcct_within",
-    "hcct_outer",
     "lcc_within",
     "lcc_outer",
     "t_within",
@@ -51,7 +49,6 @@ required_model_covariates:
     "wdir10_within",
     "wdir10_outer",
     "dswrf_diff",
-    "hcct_diff",
     "lcc_diff",
     "t_diff",
     "wdir10_diff",
