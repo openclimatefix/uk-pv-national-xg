@@ -68,6 +68,7 @@ def main(base_save_directory: Path):
     # instead, iterate over each year in the dataset and save locally
 
     years = pd.DatetimeIndex(nwp.init_time.values).year.unique().values
+    years.append(years[-1] + 1)
     date_years = [dt.datetime(year=year, month=1, day=1) for year in years]
 
     for i in range(len(years) - 1):
