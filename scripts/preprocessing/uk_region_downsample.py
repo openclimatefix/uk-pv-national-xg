@@ -27,6 +27,8 @@ formatString = "[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(messag
 logLevel = logging.DEBUG  # specify standard log level
 logging.basicConfig(format=formatString, level=logLevel, datefmt="%Y-%m-%d %I:%M:%S")
 
+logging.getLogger('gcsfs').setLevel(logging.INFO)
+logging.getLogger('geopandas').setLevel(logging.INFO)
 
 FORECAST_HORIZONS = range(NWP_STEP_HORIZON)
 
@@ -96,13 +98,14 @@ def main(base_save_directory: Path):
 
         iter_params = list(itertools.product(DEFAULT_VARIABLES_FOR_PROCESSING, FORECAST_HORIZONS))
         for var, step in iter_params:
-            logger.info(f"Processing var: {var}, step: {step}")
+            logger.info(f"Processing var: {var}, step: {step}, year: {year}")
             uk_region, outer_region = dataset_builder.build_region_masked_covariates(var, step)
 
             inner_fpath, outer_fpath = build_local_save_path(
                 step, var, year, directory=base_save_directory
             )
 
+            logger.debug("Saving files")
             uk_region.to_pickle(inner_fpath)
             outer_region.to_pickle(outer_fpath)
 
