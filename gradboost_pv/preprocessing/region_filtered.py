@@ -2,9 +2,9 @@
 import itertools
 import logging
 import multiprocessing as mp
+import os
 from pathlib import Path
 from typing import Iterable, Tuple, Union
-import os
 
 import geopandas as gpd
 import numpy as np
@@ -15,7 +15,6 @@ from shapely.geometry import MultiPolygon, Point, Polygon
 from shapely.ops import unary_union
 
 from gradboost_pv.models.utils import DEFAULT_DIRECTORY_TO_PROCESSED_NWP
-
 
 logger = logging.getLogger(__name__)
 
@@ -148,9 +147,9 @@ def check_points_in_multipolygon_multiprocessed(
     Returns:
         np.ndarray: _description_
     """
-    filename = './data/uk_region_mask_train.npy'
+    filename = "./data/uk_region_mask_train.npy"
     if os.path.exists(filename):
-        logger.debug('Loading UK region mask from file')
+        logger.debug("Loading UK region mask from file")
         return np.load(filename)
     items = [(point, polygon) for point in points]
     results = list()
@@ -160,8 +159,8 @@ def check_points_in_multipolygon_multiprocessed(
 
     a = np.asarray(results)
 
-    logger.debug(f'Saving UK region mask from file {filename}')
-    np.save('./data/uk_region_mask_train.npy', a)
+    logger.debug(f"Saving UK region mask from file {filename}")
+    np.save("./data/uk_region_mask_train.npy", a)
 
     return a
 
@@ -207,14 +206,14 @@ class NWPUKRegionMaskedDatasetBuilder:
             xr.DataArray: UK-region mask, on NWP (x,y) coords
         """
 
-        logger.info('Loading UK region mask from National Grid ESO')
+        logger.info("Loading UK region mask from National Grid ESO")
 
         uk_polygon = query_eso_geojson()
         uk_polygon = process_eso_uk_multipolygon(uk_polygon)
         mask = generate_polygon_mask(self.nwp.coords["x"], self.nwp.coords["y"], uk_polygon)
 
         # convert numpy array to xarray mask for a 1 variable, 1 step times series of (x,y) coords
-        logger.debug('Making mask')
+        logger.debug("Making mask")
         mask = xr.DataArray(
             np.tile(mask.T, (len(self.nwp.coords["init_time"]), 1, 1)),
             dims=["init_time", "x", "y"],

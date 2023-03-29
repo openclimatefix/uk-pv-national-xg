@@ -23,12 +23,14 @@ from gradboost_pv.utils.logger import getLogger
 
 logger = getLogger("uk-region-filter-nwp-data")
 
-formatString = "[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s"  # specify a format string
+formatString = (
+    "[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s"  # specify a format string
+)
 logLevel = logging.DEBUG  # specify standard log level
 logging.basicConfig(format=formatString, level=logLevel, datefmt="%Y-%m-%d %I:%M:%S")
 
-logging.getLogger('gcsfs').setLevel(logging.INFO)
-logging.getLogger('geopandas').setLevel(logging.INFO)
+logging.getLogger("gcsfs").setLevel(logging.INFO)
+logging.getLogger("geopandas").setLevel(logging.INFO)
 
 FORECAST_HORIZONS = range(NWP_STEP_HORIZON)
 
@@ -74,14 +76,13 @@ def main(base_save_directory: Path):
     date_years.append(dt.datetime(year=years[-1] + 1, month=1, day=1))
 
     for i in range(len(date_years) - 1):
-
         year = date_years[i].year
-        logger.info('Loading NWP data for year %s', year)
+        logger.info("Loading NWP data for year %s", year)
         start_datetime, end_datetime = date_years[i], date_years[i + 1]
         _nwp = nwp.sel(init_time=slice(start_datetime, end_datetime))
 
         # time points to interpolate our nwp data onto.
-        logger.info('Loading GSP datetimes for year %s', year)
+        logger.info("Loading GSP datetimes for year %s", year)
         evaluation_timeseries = (
             gsp.coords["datetime_gmt"]
             .where(
@@ -92,8 +93,8 @@ def main(base_save_directory: Path):
             .values
         )
 
-        logger.debug(f'{evaluation_timeseries=}')
-        logger.debug(f'{evaluation_timeseries.shape=}')
+        logger.debug(f"{evaluation_timeseries=}")
+        logger.debug(f"{evaluation_timeseries.shape=}")
 
         dataset_builder = NWPUKRegionMaskedDatasetBuilder(
             _nwp,
