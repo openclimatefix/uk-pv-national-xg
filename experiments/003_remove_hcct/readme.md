@@ -19,4 +19,3 @@ Resutls MAE test set. Should remove HCCT. Later we can investigate if we should 
 | 16      | 0.025 | 0.029                 | 0.025   |
 | 24      | 0.025 | 0.029                 | 0.025   |
 | 36      | 0.026 | 0.029                 | 0.026   |
-
