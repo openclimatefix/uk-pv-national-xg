@@ -13,7 +13,7 @@ from xgboost import XGBRegressor
 logger = logging.getLogger(__name__)
 
 DEV_BUCKET_NAME = "nowcasting-national-forecaster-models-development"
-MODEL = "v1"
+MODEL = "v2"
 
 
 def build_object_name(forecast_horizon_hour: int) -> str:
