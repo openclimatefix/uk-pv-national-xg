@@ -30,7 +30,7 @@ DEFAULT_VARIABLES_FOR_PROCESSING = [
     "lcc",
     "hcc",
     "dswrf",
-    "hcct",
+    # "hcct",
     "lcc",
     "t",
     # "sde",
