@@ -13,5 +13,5 @@ Lets investigate the effects of `n_estimators` on the results.
 | 24      | 0.025 | 0.020 | 0.019 | 0.018 |
 | 36      | 0.026 | 0.021 | 0.019 | 0.019 |
 
-I think it would be sensible to move `n_estimators` up to 1250. 
+I think it would be sensible to move `n_estimators` up to 1250.
 Note that training takes longer with a larger  `n_estimators`
