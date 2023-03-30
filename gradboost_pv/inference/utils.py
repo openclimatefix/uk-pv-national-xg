@@ -104,6 +104,10 @@ def smooth_results(results_df: pd.Series):
     smoothed_df.iloc[0] = results_df.iloc[0]
     smoothed_df.iloc[-1] = results_df.iloc[-1]
 
+    # if initial value is zero, keep it zero
+    zero_mask = results_df == 0
+    smoothed_df[zero_mask] = 0
+
     return smoothed_df
 
 

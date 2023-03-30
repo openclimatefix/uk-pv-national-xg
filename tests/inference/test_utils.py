@@ -53,9 +53,13 @@ def test_smooth_results():
     assert smoothed.iloc[-1] == 10
     assert smoothed.iloc[-2] == 9
 
-    results_df = pd.Series([1, 2, 1, 1, 3])
+    results_df = pd.Series([1, 2, 1, 1, 3, 0, 0, 1])
     smoothed = smooth_results(results_df)
     assert smoothed.iloc[0] == 1
     assert smoothed.iloc[1] == 1.5
-    assert smoothed.iloc[-1] == 3
-    assert smoothed.iloc[-2] == 1.5
+    assert smoothed.iloc[2] == 1.25
+    assert smoothed.iloc[3] == 1.5
+    assert smoothed.iloc[4] == 1.75
+    assert smoothed.iloc[5] == 0
+    assert smoothed.iloc[6] == 0
+    assert smoothed.iloc[7] == 1
