@@ -5,7 +5,7 @@ import pandas as pd
 from gradboost_pv.inference.utils import (
     calculate_azimuth_and_elevation_angle,
     filter_forecasts_on_sun_elevation,
-    smooth_results
+    smooth_results,
 )
 
 
@@ -45,7 +45,6 @@ def test_filter_forecasts_on_sun_elevation(forecasts):
 
 
 def test_smooth_results():
-
     results_df = pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     smoothed = smooth_results(results_df)
     assert smoothed.iloc[0] == 1
