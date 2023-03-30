@@ -3,8 +3,8 @@ import logging
 from datetime import datetime, timezone
 from typing import List
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import pvlib
 from nowcasting_datamodel.models import ForecastSQL
 
@@ -109,5 +109,3 @@ def smooth_results(results_df: pd.Series):
     smoothed_df[zero_mask] = 0
 
     return smoothed_df
-
-
