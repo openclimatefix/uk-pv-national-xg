@@ -45,6 +45,7 @@ def save_to_database(results_df: pd.DataFrame, start_hour_to_save: int, session:
     # add to database
     logger.debug("Adding forecast to database")
     session.add(forecast_sql)
+    session.add_all(forecast_sql.forecast_values)
     session.commit()
 
     # only save 8 hour out, so we dont override PVnet
@@ -57,5 +58,5 @@ def save_to_database(results_df: pd.DataFrame, start_hour_to_save: int, session:
         f"This will be {len(forecast_sql.forecast_values)} forecast values"
     )
     update_all_forecast_latest(
-        session=session, forecasts=forecasts, update_national=True, update_gsp=False
+        session=session, forecasts=[forecast_sql], update_national=True, update_gsp=False
     )
