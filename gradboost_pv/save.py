@@ -47,6 +47,7 @@ def save_to_database(results_df: pd.DataFrame, start_hour_to_save: int, session:
     session.add(forecast_sql)
     session.add_all(forecast_sql.forecast_values)
     session.commit()
+    session.flush()
 
     # only save 8 hour out, so we dont override PVnet
     target_time_filter = forecast_sql.forecast_creation_time + timedelta(hours=start_hour_to_save)
