@@ -13,6 +13,7 @@ import gradboost_pv
 from gradboost_pv.inference.data_feeds import ProductionDataFeed
 from gradboost_pv.inference.models import Hour, NationalBoostInferenceModel, NationalPVModelConfig
 from gradboost_pv.inference.run import MockDatabaseConnection, NationalBoostModelInference
+from gradboost_pv.inference.utils import smooth_results
 from gradboost_pv.models.s3 import build_object_name, create_s3_client, load_model
 from gradboost_pv.models.utils import load_nwp_coordinates
 from gradboost_pv.save import save_to_database
@@ -131,11 +132,14 @@ def main(
     logger.debug("Model inference complete")
 
     # get dataframe object
-    logger.debug("Saving results to DB")
     database_conn = MockDatabaseConnection(DEFAULT_PATH_TO_MOCK_DATABASE, overwrite_database=False)
     database_conn.connect()
     results_df = database_conn.database.data
 
+    logger.debug("Smoothing results")
+    results_df = smooth_results(results_df)
+
+    logger.debug("Saving results to DB")
     if not write_to_database:
         print(results_df)
     else:
