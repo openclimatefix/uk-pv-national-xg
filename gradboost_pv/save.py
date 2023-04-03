@@ -3,6 +3,7 @@ import logging
 from datetime import timedelta
 
 import pandas as pd
+from nowcasting_datamodel.models import ForecastSQL
 from nowcasting_datamodel.models.convert import convert_df_to_national_forecast
 from nowcasting_datamodel.save.update import update_all_forecast_latest
 from sqlalchemy.orm import Session
@@ -45,7 +46,20 @@ def save_to_database(results_df: pd.DataFrame, start_hour_to_save: int, session:
     # add to database
     logger.debug("Adding forecast to database")
     session.add(forecast_sql)
+    logger.debug(f"Adding {len(forecast_sql.forecast_values)} forecast values to database")
+    session.add_all(forecast_sql.forecast_values)
     session.commit()
+    session.flush()
+
+    # copy the forecast so that we can update the latest table
+    forecast_sql = ForecastSQL(
+        historic=forecast_sql.model,
+        forecast_values=forecast_sql.forecast_values,
+        forecast_creation_time=forecast_sql.forecast_creation_time,
+        model=forecast_sql.model,
+        location=forecast_sql.location,
+        input_data_last_updated=forecast_sql.input_data_last_updated,
+    )
 
     # only save 8 hour out, so we dont override PVnet
     target_time_filter = forecast_sql.forecast_creation_time + timedelta(hours=start_hour_to_save)
@@ -57,5 +71,5 @@ def save_to_database(results_df: pd.DataFrame, start_hour_to_save: int, session:
         f"This will be {len(forecast_sql.forecast_values)} forecast values"
     )
     update_all_forecast_latest(
-        session=session, forecasts=forecasts, update_national=True, update_gsp=False
+        session=session, forecasts=[forecast_sql], update_national=True, update_gsp=False
     )
