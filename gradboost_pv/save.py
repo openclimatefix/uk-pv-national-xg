@@ -1,6 +1,5 @@
 """ Function to save results to datbase """
 import logging
-from datetime import timedelta
 
 import pandas as pd
 from nowcasting_datamodel.models import ForecastSQL
