@@ -14,7 +14,7 @@ from gradboost_pv.inference.utils import filter_forecasts_on_sun_elevation
 logger = logging.getLogger(__name__)
 
 
-def save_to_database(results_df: pd.DataFrame, start_hour_to_save: int, session: Session):
+def save_to_database(results_df: pd.DataFrame, session: Session):
     """
     Method to save results to a database
     """
@@ -62,12 +62,8 @@ def save_to_database(results_df: pd.DataFrame, start_hour_to_save: int, session:
     )
 
     # only save 8 hour out, so we dont override PVnet
-    target_time_filter = forecast_sql.forecast_creation_time + timedelta(hours=start_hour_to_save)
-    forecast_sql.forecast_values = [
-        f for f in forecast_sql.forecast_values if f.target_time >= target_time_filter
-    ]
     logger.debug(
-        f"Adding forecasts to latest, if target time is past {target_time_filter}. "
+        f"Adding all forecasts to latest. "
         f"This will be {len(forecast_sql.forecast_values)} forecast values"
     )
     update_all_forecast_latest(

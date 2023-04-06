@@ -81,19 +81,12 @@ logging.getLogger("s3fs").setLevel(logging.INFO)
     default=None,
     help="Optional AWS s3 Secret Key.",
 )
-@click.option(
-    "--start_hour_to_save",
-    type=int,
-    default=8,
-    help="From X hours out, we save the values in the forecast latest table",
-)
 def main(
     path_to_model_config: Path,
     path_to_datafeed_config: Path,
     write_to_database: bool = True,
     s3_access_key: Optional[str] = None,
     s3_secret_key: Optional[str] = None,
-    start_hour_to_save: Optional[int] = 8,
 ):
     """Entry point for inference script"""
 
@@ -141,7 +134,7 @@ def main(
     else:
         connection = DatabaseConnection(url=os.getenv("DB_URL"))
         with connection.get_session() as session:
-            save_to_database(results_df, start_hour_to_save, session=session)
+            save_to_database(results_df, session=session)
 
     logger.info("Done")
 
