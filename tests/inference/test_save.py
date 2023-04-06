@@ -19,7 +19,7 @@ def test_save_to_database(db_session):
         ],
     )
 
-    save_to_database(session=db_session, results_df=results_df, start_hour_to_save=0)
+    save_to_database(session=db_session, results_df=results_df)
 
     db_session.flush()
 
