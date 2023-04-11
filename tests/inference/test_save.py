@@ -30,6 +30,10 @@ def test_save_to_database(db_session):
 
 @freeze_time("2023-01-01")
 def test_save_to_database_twice(db_session):
+    db_session.query(ForecastValueLatestSQL).delete()
+    db_session.query(ForecastValueSQL).delete()
+    db_session.query(ForecastSQL).delete()
+
     results_df = pd.DataFrame(
         columns=["datetime_of_target_utc", "forecast_kw"],
         data=[
@@ -39,8 +43,8 @@ def test_save_to_database_twice(db_session):
         ],
     )
 
-    save_to_database(session=db_session, results_df=results_df)
-    save_to_database(session=db_session, results_df=results_df)
+    save_to_database(session=db_session, results_df=results_df.copy())
+    save_to_database(session=db_session, results_df=results_df.copy())
 
     db_session.flush()
 
