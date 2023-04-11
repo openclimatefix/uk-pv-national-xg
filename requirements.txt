@@ -3,7 +3,7 @@ pandas
 xarray
 xgboost
 ocf_datapipes
-nowcasting_datamodel==1.2.4
+nowcasting_datamodel==1.2.5
 scikit-learn
 matplotlib
 geopandas
