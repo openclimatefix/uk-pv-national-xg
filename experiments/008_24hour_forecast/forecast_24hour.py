@@ -1,6 +1,5 @@
 """ Script to load results from the database """
 import json
-
 from datetime import timedelta, timezone
 
 import boto3
@@ -26,7 +25,6 @@ start_date = "2023-03-28"
 
 
 with connection.get_session() as session:
-
     # 24 hours results
     query = session.query(ForecastValueSQL)
     query = query.distinct(ForecastValueSQL.target_time)
@@ -68,7 +66,7 @@ with connection.get_session() as session:
     ]
     national_pvlive_values = [gsp_yield.solar_generation_kw / 1000 for gsp_yield in pvlive]
 
-    #make figure
+    # make figure
     fig = go.Figure(
         data=[
             go.Scatter(x=national_xg_datetimes, y=national_xg_values, name="xg"),
