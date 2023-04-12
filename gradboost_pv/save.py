@@ -66,5 +66,9 @@ def save_to_database(results_df: pd.DataFrame, session: Session):
         f"This will be {len(forecast_sql.forecast_values)} forecast values"
     )
     update_all_forecast_latest(
-        session=session, forecasts=[forecast_sql], update_national=True, update_gsp=False, model_name="National_xg"
+        session=session,
+        forecasts=[forecast_sql],
+        update_national=True,
+        update_gsp=False,
+        model_name="National_xg",
     )
