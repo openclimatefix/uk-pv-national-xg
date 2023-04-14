@@ -5,6 +5,8 @@ import pytest
 import xarray as xr
 from xgboost import XGBRegressor
 
+from nowcasting_datamodel.fake import make_fake_me_latest
+
 import gradboost_pv
 from gradboost_pv.inference.models import NationalPVModelConfig
 
@@ -66,3 +68,10 @@ def sample_prod_gsp_data() -> xr.Dataset:
     print(PATH_TO_SAMPLE_GSP)
     gsp = xr.open_zarr(PATH_TO_SAMPLE_GSP)
     return gsp
+
+
+@pytest.fixture()
+def me_latest(db_session):
+    metric_values = make_fake_me_latest(session=db_session, model_name='National_xg')
+    db_session.add_all(metric_values)
+    db_session.commit()
