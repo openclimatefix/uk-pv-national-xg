@@ -5,6 +5,7 @@ import pandas as pd
 from nowcasting_datamodel.models import ForecastSQL
 from nowcasting_datamodel.models.convert import convert_df_to_national_forecast
 from nowcasting_datamodel.save.update import update_all_forecast_latest
+from nowcasting_datamodel.save.save import save_all_forecast_values_seven_days
 from sqlalchemy.orm import Session
 
 import gradboost_pv
@@ -72,3 +73,7 @@ def save_to_database(results_df: pd.DataFrame, session: Session):
         update_gsp=False,
         model_name="National_xg",
     )
+
+    logger.debug("Saving to last seven days table")
+    save_all_forecast_values_seven_days(session=session, forecasts=forecasts)
+    session.commit()
