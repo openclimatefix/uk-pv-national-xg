@@ -4,8 +4,8 @@ import logging
 import pandas as pd
 from nowcasting_datamodel.models import ForecastSQL
 from nowcasting_datamodel.models.convert import convert_df_to_national_forecast
-from nowcasting_datamodel.save.update import update_all_forecast_latest
 from nowcasting_datamodel.save.save import save_all_forecast_values_seven_days
+from nowcasting_datamodel.save.update import update_all_forecast_latest
 from sqlalchemy.orm import Session
 
 import gradboost_pv
