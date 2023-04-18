@@ -12,7 +12,9 @@ from xgboost import XGBRegressor
 
 logger = logging.getLogger(__name__)
 
-DEV_BUCKET_NAME = "nowcasting-national-forecaster-models-development"
+
+env = os.environ.get("ENVIRONMENT", "development")
+BUCKET_NAME = f"nowcasting-national-forecaster-models-{env}"
 MODEL = "v3"
 
 
@@ -45,7 +47,7 @@ def create_s3_client(access_key_id: Optional[str] = None, secret_key: Optional[s
         return boto3.client("s3", aws_access_key_id=access_key_id, aws_secret_access_key=secret_key)
 
 
-def load_model(s3_client, object_name: str, bucket_name: str = DEV_BUCKET_NAME) -> XGBRegressor:
+def load_model(s3_client, object_name: str, bucket_name: str = BUCKET_NAME) -> XGBRegressor:
     """Downloads XGBRegressor model from s3 storage.
 
     Args:
@@ -77,7 +79,7 @@ def save_model(
     s3_client,
     object_name: str,
     model: XGBRegressor,
-    bucket_name: str = DEV_BUCKET_NAME,
+    bucket_name: str = BUCKET_NAME,
     overwrite_current: bool = False,
 ) -> bool:
     """Saves an XGBRegressor model to s3
