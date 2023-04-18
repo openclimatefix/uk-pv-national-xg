@@ -1,6 +1,6 @@
 numpy
 pandas
-xarray
+xarray <= 2023.3.0
 xgboost
 ocf_datapipes
 nowcasting_datamodel==1.2.7
