@@ -1,5 +1,5 @@
 numpy
-pandas
+pandas==1.5.3
 xarray
 xgboost
 ocf_datapipes
