@@ -4,7 +4,6 @@ Script to adjust the predictions of the model by using the last week average err
 """
 import pandas as pd
 
-
 folder = "./results"
 
 forecast_horizon_max = 37
@@ -41,7 +40,6 @@ for hour in range(0, 24):
         df_one_sp = df_one_sp.loc[df_one_sp.index.minute == minute]
 
         for i in range(0, forecast_horizon_max):
-
             df_one_sp[f"mae_{i}"] = (
                 (df_one_sp[f"prediction_{i}"] - df_one_sp[f"target_{i}"]).rolling(7).mean()
             )
