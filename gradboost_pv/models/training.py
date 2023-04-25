@@ -11,8 +11,10 @@ import pandas as pd
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from xgboost import XGBRegressor
 
+ALPHA = np.array([0.05, 0.5, 0.95])
+
 DEFFAULT_HYPARAM_CONFIG = {
-    "objective": "reg:squarederror",
+    "objective": "reg:quantileerror",
     "booster": "gbtree",
     "colsample_bylevel": 1,
     "colsample_bynode": 1,
@@ -40,6 +42,7 @@ DEFFAULT_HYPARAM_CONFIG = {
     "scale_pos_weight": 1,
     "subsample": 0.65,
     "tree_method": "hist",
+    "quantile_alpha": ALPHA,
     "validate_parameters": 1,
     "verbosity": 1,
 }
