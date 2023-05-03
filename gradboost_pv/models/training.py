@@ -8,7 +8,7 @@ from typing import Optional, Union
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error, mean_pinball_loss, d2_pinball_score
 from xgboost import XGBRegressor
 
 ALPHA = np.array([0.1, 0.5, 0.9])
@@ -52,8 +52,8 @@ DEFFAULT_HYPARAM_CONFIG = {
 class ExperimentSummary:
     """Object for storing basic model train/test results"""
 
-    mse_train_loss: float
-    mse_test_loss: float
+    pinball_train_loss: float
+    pinball_test_loss: float
     mae_train_loss: float
     mae_test_loss: float
     model: XGBRegressor
@@ -107,11 +107,13 @@ def run_experiment(
     model.fit(X_train, y_train)
 
     y_pred_test, y_pred_train = model.predict(X_test), model.predict(X_train)
-    y_pred_test = y_pred_test[:,1]
-    y_pred_train = y_pred_train[:,1]
-    train_mse, test_mse = mean_squared_error(y_train, y_pred_train), mean_squared_error(
+
+    train_pinball, test_pinball = mean_pinball_loss(y_train, y_pred_train), mean_pinball_loss(
         y_test, y_pred_test
     )
+
+    y_pred_test = y_pred_test[:,1]
+    y_pred_train = y_pred_train[:,1]
     train_mae, test_mae = mean_absolute_error(y_train, y_pred_train), mean_absolute_error(
         y_test, y_pred_test
     )
@@ -144,8 +146,8 @@ def run_experiment(
         errors.to_pickle(errors_local_save_file)
 
     return ExperimentSummary(
-        train_mse,
-        test_mse,
+        train_pinball,
+        test_pinball,
         train_mae,
         test_mae,
         model,  # just save the last trained model for nwp
@@ -155,10 +157,10 @@ def run_experiment(
 def plot_loss_metrics(results_by_step: dict[int, ExperimentSummary]):
     """Convenience function for plotting loss metrics over forecast horizons"""
     title_mapping = {
-        "MAE Train": lambda x: x.mae_train_loss,
-        "MAE Test": lambda x: x.mae_test_loss,
-        "MSE Train": lambda x: x.mse_train_loss,
-        "MSE Test": lambda x: x.mse_test_loss,
+        "MAE Median Train": lambda x: x.mae_train_loss,
+        "MAE Median Test": lambda x: x.mae_test_loss,
+        "Pinball Train": lambda x: x.pinball_train_loss,
+        "Pinball Test": lambda x: x.pinball_test_loss,
     }
 
     fig, axes = plt.subplots(2, 2, figsize=(10, 10))
