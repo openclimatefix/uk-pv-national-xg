@@ -107,6 +107,8 @@ def run_experiment(
     model.fit(X_train, y_train)
 
     y_pred_test, y_pred_train = model.predict(X_test), model.predict(X_train)
+    y_pred_test = y_pred_test[:,1]
+    y_pred_train = y_pred_train[:,1]
     train_mse, test_mse = mean_squared_error(y_train, y_pred_train), mean_squared_error(
         y_test, y_pred_test
     )
