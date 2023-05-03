@@ -11,7 +11,7 @@ import pandas as pd
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from xgboost import XGBRegressor
 
-ALPHA = np.array([0.05, 0.5, 0.95])
+ALPHA = np.array([0.1, 0.5, 0.9])
 
 DEFFAULT_HYPARAM_CONFIG = {
     "objective": "reg:quantileerror",
