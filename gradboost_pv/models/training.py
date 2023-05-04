@@ -8,8 +8,11 @@ from typing import Optional, Union
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.metrics import mean_absolute_error, mean_squared_error, mean_pinball_loss, d2_pinball_score
-from xgboost import XGBRegressor, QuantileDMatrix, train
+from sklearn.metrics import (
+    mean_absolute_error,
+    mean_pinball_loss,
+)
+from xgboost import XGBRegressor
 
 ALPHA = np.array([0.1, 0.5, 0.9])
 
@@ -107,18 +110,18 @@ def run_experiment(
     X_train, y_train = X.loc[X.index < "2021-01-01"], y.loc[y.index < "2021-01-01"]
     X_test, y_test = X.loc[X.index >= "2021-01-01"], y.loc[y.index >= "2021-01-01"]
 
-    #Xy = QuantileDMatrix(X_train, y_train)
+    # Xy = QuantileDMatrix(X_train, y_train)
     # use Xy as a reference
-    #Xy_test = QuantileDMatrix(X_test, y_test, ref=Xy)
-    #evals_result = {}
-    #booster = train(
+    # Xy_test = QuantileDMatrix(X_test, y_test, ref=Xy)
+    # evals_result = {}
+    # booster = train(
     #    booster_hyperparam_config,
     #    Xy,
     #    # The evaluation result is a weighted average across multiple quantiles.
     #    evals=[(Xy, "Train"), (Xy_test, "Test")],
     #    evals_result=evals_result,
-    #)
-    #print(evals_result)
+    # )
+    # print(evals_result)
     model = XGBRegressor(**booster_hyperparam_config)
     model.fit(X_train, y_train)
 
@@ -126,15 +129,15 @@ def run_experiment(
     train_pinballs = []
     test_pinballs = []
     for idx, alpha in enumerate(ALPHA):
-        y_pred_train_alpha = y_pred_train[:,idx]
-        y_pred_test_alpha = y_pred_test[:,idx]
-        train_pinball, test_pinball = mean_pinball_loss(y_train, y_pred_train_alpha, alpha=alpha), mean_pinball_loss(
-            y_test, y_pred_test_alpha, alpha=alpha
-        )
+        y_pred_train_alpha = y_pred_train[:, idx]
+        y_pred_test_alpha = y_pred_test[:, idx]
+        train_pinball, test_pinball = mean_pinball_loss(
+            y_train, y_pred_train_alpha, alpha=alpha
+        ), mean_pinball_loss(y_test, y_pred_test_alpha, alpha=alpha)
         train_pinballs.append(train_pinball)
         test_pinballs.append(test_pinball)
-    y_pred_train = y_pred_train[:,1]
-    y_pred_test = y_pred_test[:,1]
+    y_pred_train = y_pred_train[:, 1]
+    y_pred_test = y_pred_test[:, 1]
     train_mae, test_mae = mean_absolute_error(y_train, y_pred_train), mean_absolute_error(
         y_test, y_pred_test
     )
