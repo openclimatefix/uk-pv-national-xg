@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error, mean_squared_error, mean_pinball_loss, d2_pinball_score
-from xgboost import XGBRegressor
+from xgboost import XGBRegressor, QuantileDMatrix, train
 
 ALPHA = np.array([0.1, 0.5, 0.9])
 
@@ -54,6 +54,10 @@ class ExperimentSummary:
 
     pinball_train_loss: float
     pinball_test_loss: float
+    pinball_train_10_percentile_loss: float
+    pinball_test_10_percentile_loss: float
+    pinball_train_90_percentile_loss: float
+    pinball_test_90_percentile_loss: float
     mae_train_loss: float
     mae_test_loss: float
     model: XGBRegressor
@@ -103,17 +107,34 @@ def run_experiment(
     X_train, y_train = X.loc[X.index < "2021-01-01"], y.loc[y.index < "2021-01-01"]
     X_test, y_test = X.loc[X.index >= "2021-01-01"], y.loc[y.index >= "2021-01-01"]
 
+    #Xy = QuantileDMatrix(X_train, y_train)
+    # use Xy as a reference
+    #Xy_test = QuantileDMatrix(X_test, y_test, ref=Xy)
+    #evals_result = {}
+    #booster = train(
+    #    booster_hyperparam_config,
+    #    Xy,
+    #    # The evaluation result is a weighted average across multiple quantiles.
+    #    evals=[(Xy, "Train"), (Xy_test, "Test")],
+    #    evals_result=evals_result,
+    #)
+    #print(evals_result)
     model = XGBRegressor(**booster_hyperparam_config)
     model.fit(X_train, y_train)
 
     y_pred_test, y_pred_train = model.predict(X_test), model.predict(X_train)
-
-    train_pinball, test_pinball = mean_pinball_loss(y_train, y_pred_train), mean_pinball_loss(
-        y_test, y_pred_test
-    )
-
-    y_pred_test = y_pred_test[:,1]
+    train_pinballs = []
+    test_pinballs = []
+    for idx, alpha in enumerate(ALPHA):
+        y_pred_train_alpha = y_pred_train[:,idx]
+        y_pred_test_alpha = y_pred_test[:,idx]
+        train_pinball, test_pinball = mean_pinball_loss(y_train, y_pred_train_alpha, alpha=alpha), mean_pinball_loss(
+            y_test, y_pred_test_alpha, alpha=alpha
+        )
+        train_pinballs.append(train_pinball)
+        test_pinballs.append(test_pinball)
     y_pred_train = y_pred_train[:,1]
+    y_pred_test = y_pred_test[:,1]
     train_mae, test_mae = mean_absolute_error(y_train, y_pred_train), mean_absolute_error(
         y_test, y_pred_test
     )
@@ -146,8 +167,12 @@ def run_experiment(
         errors.to_pickle(errors_local_save_file)
 
     return ExperimentSummary(
-        train_pinball,
-        test_pinball,
+        train_pinballs[1],
+        test_pinballs[1],
+        train_pinballs[0],
+        test_pinballs[0],
+        train_pinballs[2],
+        test_pinballs[2],
         train_mae,
         test_mae,
         model,  # just save the last trained model for nwp
@@ -159,19 +184,32 @@ def plot_loss_metrics(results_by_step: dict[int, ExperimentSummary]):
     title_mapping = {
         "MAE Median Train": lambda x: x.mae_train_loss,
         "MAE Median Test": lambda x: x.mae_test_loss,
-        "Pinball Train": lambda x: x.pinball_train_loss,
-        "Pinball Test": lambda x: x.pinball_test_loss,
+        "Pinball 0.5 Train": lambda x: x.pinball_train_loss,
+        "Pinball 0.5 Test": lambda x: x.pinball_test_loss,
+    }
+    title_mapping2 = {
+        "Pinball 0.1 Train": lambda x: x.pinball_train_10_percentile_loss,
+        "Pinball 0.1 Test": lambda x: x.pinball_test_10_percentile_loss,
+        "Pinball 0.9 Train": lambda x: x.pinball_train_90_percentile_loss,
+        "Pinball 0.9 Test": lambda x: x.pinball_test_90_percentile_loss,
     }
 
-    fig, axes = plt.subplots(2, 2, figsize=(10, 10))
+    fig, axes = plt.subplots(2, 4, figsize=(40, 20))
 
     for idx, title in enumerate(title_mapping.keys()):
-        row = int(idx > 1)
-        col = idx % 2
+        # Put each metric on a different row
+        col = idx
         data = pd.Series({step: title_mapping[title](r) for step, r in results_by_step.items()})
-        axes[row][col].scatter(data.index, data.values)
-        axes[row][col].set_title(title)
-        axes[row][col].set_xlabel("Forecast Horizon (Hours from init_time_utc)")
+        axes[0][col].scatter(data.index, data.values)
+        axes[0][col].set_title(title)
+        axes[0][col].set_xlabel("Forecast Horizon (Hours from init_time_utc)")
+    for idx, title in enumerate(title_mapping2.keys()):
+        # Put each metric on a different row
+        col = idx
+        data = pd.Series({step: title_mapping2[title](r) for step, r in results_by_step.items()})
+        axes[1][col].scatter(data.index, data.values)
+        axes[1][col].set_title(title)
+        axes[1][col].set_xlabel("Forecast Horizon (Hours from init_time_utc)")
 
     plt.show()
 
