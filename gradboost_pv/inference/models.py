@@ -500,7 +500,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         return Prediction(
             inference_datetime,
             inference_datetime + np.timedelta64(forecast_horizon_hours, "h"),
-            pv_amount[:,1],
-            pv_amount[:,0],
-            pv_amount[:,2],
+            pv_amount[:, 1],
+            pv_amount[:, 0],
+            pv_amount[:, 2],
         )
