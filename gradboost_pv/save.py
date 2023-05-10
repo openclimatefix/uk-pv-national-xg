@@ -1,10 +1,9 @@
 """ Function to save results to datbase """
 import logging
-from datetime import timedelta
 
 import pandas as pd
 from nowcasting_datamodel.models.convert import convert_df_to_national_forecast
-from nowcasting_datamodel.save.update import update_all_forecast_latest
+from nowcasting_datamodel.save.save import save
 from sqlalchemy.orm import Session
 
 import gradboost_pv
@@ -13,7 +12,7 @@ from gradboost_pv.inference.utils import filter_forecasts_on_sun_elevation
 logger = logging.getLogger(__name__)
 
 
-def save_to_database(results_df: pd.DataFrame, start_hour_to_save: int, session: Session):
+def save_to_database(results_df: pd.DataFrame, session: Session):
     """
     Method to save results to a database
     """
@@ -40,22 +39,5 @@ def save_to_database(results_df: pd.DataFrame, start_hour_to_save: int, session:
 
     # zero out night times
     forecasts = filter_forecasts_on_sun_elevation(forecasts=[forecast_sql])
-    forecast_sql = forecasts[0]
 
-    # add to database
-    logger.debug("Adding forecast to database")
-    session.add(forecast_sql)
-    session.commit()
-
-    # only save 8 hour out, so we dont override PVnet
-    target_time_filter = forecast_sql.forecast_creation_time + timedelta(hours=start_hour_to_save)
-    forecast_sql.forecast_values = [
-        f for f in forecast_sql.forecast_values if f.target_time >= target_time_filter
-    ]
-    logger.debug(
-        f"Adding forecasts to latest, if target time is past {target_time_filter}. "
-        f"This will be {len(forecast_sql.forecast_values)} forecast values"
-    )
-    update_all_forecast_latest(
-        session=session, forecasts=forecasts, update_national=True, update_gsp=False
-    )
+    save(forecasts=forecasts, session=session, update_national=True, update_gsp=False)

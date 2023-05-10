@@ -42,10 +42,10 @@ def test_build_solar_pv_features():
 
 
 def test_build_lagged_features(mock_gsp_data: pd.DataFrame):
-    forecast_horizon = np.timedelta64(0, "h")
+    forecast_horizon = pd.Timedelta(0, "h")
 
     expected_result = pd.DataFrame(
-        index=pd.DatetimeIndex([np.datetime64("2020-02-03T00:00:00")]),
+        index=pd.DatetimeIndex([pd.Timestamp("2020-02-03T00:00:00")]),
         data=np.asarray([0.0, 46.0, 44.0]).reshape(1, -1),
         columns=["PV_LAG_DAY", "PV_LAG_1HR", "PV_LAG_2HR"],
     )
