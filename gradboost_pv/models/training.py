@@ -110,7 +110,6 @@ def run_experiment(
     X_train, y_train = X.loc[X.index < "2021-01-01"], y.loc[y.index < "2021-01-01"]
     X_test, y_test = X.loc[X.index >= "2021-01-01"], y.loc[y.index >= "2021-01-01"]
 
-
     model = XGBRegressor(**booster_hyperparam_config)
     model.fit(X_train, y_train)
 
@@ -121,9 +120,9 @@ def run_experiment(
     for idx, alpha in enumerate(ALPHA):
         y_pred_train_alpha = y_pred_train[:, idx]
         y_pred_test_alpha = y_pred_test[:, idx]
-        train_pinball, test_pinball = mean_pinball_loss(y_train, y_pred_train_alpha, alpha=alpha), mean_pinball_loss(
-            y_test, y_pred_test_alpha, alpha=alpha
-        )
+        train_pinball, test_pinball = mean_pinball_loss(
+            y_train, y_pred_train_alpha, alpha=alpha
+        ), mean_pinball_loss(y_test, y_pred_test_alpha, alpha=alpha)
         train_pinballs.append(train_pinball)
         test_pinballs.append(test_pinball)
     y_pred_train = y_pred_train[:, 1]
@@ -222,7 +221,7 @@ def plot_loss_metrics(results_by_step: dict[int, ExperimentSummary]):
 
 
 def plot_feature_importances(
-        results_by_step: dict[int, ExperimentSummary], forecast_horizons=[1, 12, 24, 34]
+    results_by_step: dict[int, ExperimentSummary], forecast_horizons=[1, 12, 24, 34]
 ):
     """Convenience function for plotting feature importances over several forecast horizons"""
     fig, axes = plt.subplots(2, len(forecast_horizons), figsize=(28, 18))
