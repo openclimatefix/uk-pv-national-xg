@@ -85,6 +85,8 @@ class Prediction:
     datetime_of_model_inference_utc: np.datetime64
     datetime_of_target_utc: np.datetime64
     forecast_kw: float
+    forecast_kw_10th_percentile: float
+    forecast_kw_90th_percentile: float
 
 
 def _load_default_nwp_variables() -> list[str]:
@@ -498,5 +500,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         return Prediction(
             inference_datetime,
             inference_datetime + np.timedelta64(forecast_horizon_hours, "h"),
-            pv_amount,
+            pv_amount[:,1],
+            pv_amount[:,0],
+            pv_amount[:,2],
         )

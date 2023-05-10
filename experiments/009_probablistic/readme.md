@@ -1,4 +1,4 @@
-# N Estimators
+# N 
 
 Lets investigate the effects of quantil regression on the results. The deciles of 10% and 90% are also forecasted.
 Additionally, the MAE of the median is calculated as well.
