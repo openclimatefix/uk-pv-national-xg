@@ -110,30 +110,20 @@ def run_experiment(
     X_train, y_train = X.loc[X.index < "2021-01-01"], y.loc[y.index < "2021-01-01"]
     X_test, y_test = X.loc[X.index >= "2021-01-01"], y.loc[y.index >= "2021-01-01"]
 
-    # Xy = QuantileDMatrix(X_train, y_train)
-    # use Xy as a reference
-    # Xy_test = QuantileDMatrix(X_test, y_test, ref=Xy)
-    # evals_result = {}
-    # booster = train(
-    #    booster_hyperparam_config,
-    #    Xy,
-    #    # The evaluation result is a weighted average across multiple quantiles.
-    #    evals=[(Xy, "Train"), (Xy_test, "Test")],
-    #    evals_result=evals_result,
-    # )
-    # print(evals_result)
+
     model = XGBRegressor(**booster_hyperparam_config)
     model.fit(X_train, y_train)
 
     y_pred_test, y_pred_train = model.predict(X_test), model.predict(X_train)
+
     train_pinballs = []
     test_pinballs = []
     for idx, alpha in enumerate(ALPHA):
         y_pred_train_alpha = y_pred_train[:, idx]
         y_pred_test_alpha = y_pred_test[:, idx]
-        train_pinball, test_pinball = mean_pinball_loss(
-            y_train, y_pred_train_alpha, alpha=alpha
-        ), mean_pinball_loss(y_test, y_pred_test_alpha, alpha=alpha)
+        train_pinball, test_pinball = mean_pinball_loss(y_train, y_pred_train_alpha, alpha=alpha), mean_pinball_loss(
+            y_test, y_pred_test_alpha, alpha=alpha
+        )
         train_pinballs.append(train_pinball)
         test_pinballs.append(test_pinball)
     y_pred_train = y_pred_train[:, 1]
@@ -187,17 +177,17 @@ def plot_loss_metrics(results_by_step: dict[int, ExperimentSummary]):
     title_mapping = {
         "MAE Median Train": lambda x: x.mae_train_loss,
         "MAE Median Test": lambda x: x.mae_test_loss,
-        "Pinball 0.5 Train": lambda x: x.pinball_train_loss,
-        "Pinball 0.5 Test": lambda x: x.pinball_test_loss,
     }
     title_mapping2 = {
-        "Pinball 0.1 Train": lambda x: x.pinball_train_10_percentile_loss,
-        "Pinball 0.1 Test": lambda x: x.pinball_test_10_percentile_loss,
-        "Pinball 0.9 Train": lambda x: x.pinball_train_90_percentile_loss,
-        "Pinball 0.9 Test": lambda x: x.pinball_test_90_percentile_loss,
+        "0.5 Train": lambda x: x.pinball_train_loss,
+        "0.5 Test": lambda x: x.pinball_test_loss,
+        "0.1 Train": lambda x: x.pinball_train_10_percentile_loss,
+        "0.1 Test": lambda x: x.pinball_test_10_percentile_loss,
+        "0.9 Train": lambda x: x.pinball_train_90_percentile_loss,
+        "0.9 Test": lambda x: x.pinball_test_90_percentile_loss,
     }
 
-    fig, axes = plt.subplots(2, 4, figsize=(40, 20))
+    fig, axes = plt.subplots(2, 2, figsize=(20, 20))
 
     for idx, title in enumerate(title_mapping.keys()):
         # Put each metric on a different row
@@ -207,18 +197,32 @@ def plot_loss_metrics(results_by_step: dict[int, ExperimentSummary]):
         axes[0][col].set_title(title)
         axes[0][col].set_xlabel("Forecast Horizon (Hours from init_time_utc)")
     for idx, title in enumerate(title_mapping2.keys()):
+        if "Test" in title:
+            continue
+        # Put each metric on a different row
+        data = pd.Series({step: title_mapping2[title](r) for step, r in results_by_step.items()})
+        axes[1][0].scatter(data.index, data.values, label=title.split(" ")[0].strip())
+        # Add title to legend for axis
+
+    axes[1][0].set_title("Pinball Losses Train")
+    axes[1][0].set_xlabel("Forecast Horizon (Hours from init_time_utc)")
+    axes[1][0].legend()
+    for idx, title in enumerate(title_mapping2.keys()):
+        if "Train" in title:
+            continue
         # Put each metric on a different row
         col = idx
         data = pd.Series({step: title_mapping2[title](r) for step, r in results_by_step.items()})
-        axes[1][col].scatter(data.index, data.values)
-        axes[1][col].set_title(title)
-        axes[1][col].set_xlabel("Forecast Horizon (Hours from init_time_utc)")
+        axes[1][1].scatter(data.index, data.values, label=title.split(" ")[0].strip())
+    axes[1][1].set_title("Pinball Losses Test")
+    axes[1][1].set_xlabel("Forecast Horizon (Hours from init_time_utc)")
+    axes[1][1].legend()
 
     plt.show()
 
 
 def plot_feature_importances(
-    results_by_step: dict[int, ExperimentSummary], forecast_horizons=[1, 12, 24, 34]
+        results_by_step: dict[int, ExperimentSummary], forecast_horizons=[1, 12, 24, 34]
 ):
     """Convenience function for plotting feature importances over several forecast horizons"""
     fig, axes = plt.subplots(2, len(forecast_horizons), figsize=(28, 18))
