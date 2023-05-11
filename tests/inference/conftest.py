@@ -73,6 +73,6 @@ def sample_prod_gsp_data() -> xr.Dataset:
 
 @pytest.fixture()
 def me_latest(db_session):
-    metric_values = make_fake_me_latest(session=db_session, model_name="National_xg")
+    metric_values = make_fake_me_latest(session=db_session)
     db_session.add_all(metric_values)
     db_session.commit()
