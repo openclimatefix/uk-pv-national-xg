@@ -1,8 +1,8 @@
 # Probablistic Forecasts with Quantile Regression
 
 Lets investigate the effects of quantil regression on the results. The deciles of 10% and 90% are also forecasted.
-Additionally, the MAE of the median is calculated as well. This is the Pinball loss from scipy for the quantiles. 
-This is supposed to be the same as MAE when the quantile is 0.5, but seems to be slightly different for this case, about half the level of 
+Additionally, the MAE of the median is calculated as well. This is the Pinball loss from scipy for the quantiles.
+This is supposed to be the same as MAE when the quantile is 0.5, but seems to be slightly different for this case, about half the level of
 our MAE for the median.
 
 | Horizon | 0.1   | 0.5   | 0.9   | MAE 0.5 | Prev MAE 0.5 |
