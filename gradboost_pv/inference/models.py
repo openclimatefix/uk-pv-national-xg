@@ -493,7 +493,9 @@ class NationalBoostInferenceModel(BaseInferenceModel):
 
         # TODO - model does not always predict 0.0 in night time, check clipping threshold.
         if self._config.clip_near_zero_predictions:
-            forecast = np.asarray([f if f > self._config.clip_near_zero_value_percentage else 0.0 for f in forecast])
+            forecast = np.asarray(
+                [f if f > self._config.clip_near_zero_value_percentage else 0.0 for f in forecast]
+            )
 
         pv_amount = forecast * pv_capacity_mwp
 
