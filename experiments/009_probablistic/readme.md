@@ -1,9 +1,9 @@
-# N
+# Probablistic
 
 Lets investigate the effects of quantil regression on the results. The deciles of 10% and 90% are also forecasted.
 Additionally, the MAE of the median is calculated as well.
 
-| Horizon | 0.1   | 0.5   | 0.9   | MAE 0.5 |
+| Horizon | 0.1   | 0.5   | 0.9   | MAE 0.5 | Prev MAE 0.5 |
 |---------|-------|-------|-------|---------|
 | 0       | 0.016 | 0.010 | 0.009 | 0.009   |
 | 1       | 0.021 | 0.016 | 0.014 | 0.014   |
