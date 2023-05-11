@@ -485,7 +485,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
     def process_model_output(
         self,
         forecast_horizon_hours: Hour,
-        forecast: float,
+        forecast: np.ndarray,
         pv_capacity_mwp: float,
         inference_datetime: np.datetime64,
     ) -> Prediction:
@@ -493,14 +493,14 @@ class NationalBoostInferenceModel(BaseInferenceModel):
 
         # TODO - model does not always predict 0.0 in night time, check clipping threshold.
         if self._config.clip_near_zero_predictions:
-            forecast = forecast if forecast > self._config.clip_near_zero_value_percentage else 0.0
+            forecast = np.asarray([f if f > self._config.clip_near_zero_value_percentage else 0.0 for f in forecast])
 
         pv_amount = forecast * pv_capacity_mwp
 
         return Prediction(
             inference_datetime,
             inference_datetime + np.timedelta64(forecast_horizon_hours, "h"),
-            pv_amount[:, 1],
-            pv_amount[:, 0],
-            pv_amount[:, 2],
+            pv_amount[1],
+            pv_amount[0],
+            pv_amount[2],
         )
