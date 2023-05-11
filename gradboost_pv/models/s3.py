@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 env = os.environ.get("ENVIRONMENT", "development")
 BUCKET_NAME = f"nowcasting-national-forecaster-models-{env}"
-MODEL = "v3"
+MODEL = "v4"
 
 
 def build_object_name(forecast_horizon_hour: int) -> str:
