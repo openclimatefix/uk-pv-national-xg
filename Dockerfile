@@ -10,6 +10,9 @@ RUN apt-get clean
 RUN apt-get update -y
 RUN apt-get install gcc g++ libgeos-dev -y git -y pkg-config -y libhdf5-dev
 
+RUN git clone --recursive https://github.com/dmlc/xgboost
+RUN cd xgboost && mkdir build && cd build && cmake .. && make -j4 && cd .. && cd python-package && pip install .
+
 # copy files
 COPY setup.py app/setup.py
 COPY README.md app/README.md
