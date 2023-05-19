@@ -87,7 +87,15 @@ def main(path_to_processed_nwp: Path, nwp_variables: list[str]) -> Dict[Hour, Ex
         X, y = build_datasets_from_local(
             processed_nwp, gsp_data, np.timedelta64(forecast_horizon_hour, "h")
         )
-        training_results = run_experiment(X, y, DEFFAULT_HYPARAM_CONFIG)
+
+        errors_local_save_file = f"./results/errors_{forecast_horizon_hour}.csv"
+        training_results = run_experiment(
+            X,
+            y,
+            DEFFAULT_HYPARAM_CONFIG,
+            save_errors_locally=True,
+            errors_local_save_file=errors_local_save_file,
+        )
 
         results[forecast_horizon_hour] = training_results
 
