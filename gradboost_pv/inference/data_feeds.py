@@ -244,7 +244,11 @@ class ProductionDataFeed(IterDataPipe):
         now = datetime.now(pytz.UTC)
 
         # round up to nearest 30 minutes
-        dt = now + (datetime.min.replace(tzinfo=pytz.UTC) - now) % timedelta(minutes=30)
+        dt = (
+            now
+            + (datetime.min.replace(tzinfo=pytz.UTC) - now) % timedelta(minutes=30)
+            - timedelta(hours=1)
+        )
 
         return np.datetime64(dt)
 
