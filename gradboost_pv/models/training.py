@@ -117,10 +117,12 @@ def run_experiment(
                 [
                     (y_test.values - y_pred_test.reshape(-1, 1)) ** 2,
                     np.abs(y_test.values - y_pred_test.reshape(-1, 1)),
+                    y_test.values,
+                    y_pred_test.values,
                 ],
                 axis=1,
             ),
-            columns=["test_mse", "test_mae"],
+            columns=["test_mse", "test_mae","prediction","target"],
             index=y_test.index,
         )
         errors_train = pd.DataFrame(
@@ -128,10 +130,12 @@ def run_experiment(
                 [
                     (y_train.values - y_pred_train.reshape(-1, 1)) ** 2,
                     np.abs(y_train.values - y_pred_train.reshape(-1, 1)),
+                    y_train.values,
+                    y_pred_train.values,
                 ],
                 axis=1,
             ),
-            columns=["train_mse", "train_mae"],
+            columns=["train_mse", "train_mae","prediction","target"],
             index=y_train.index,
         )
 
