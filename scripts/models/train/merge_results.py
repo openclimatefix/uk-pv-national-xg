@@ -14,6 +14,8 @@ for forecast_horizon_hour in forecast_horizon_hours:
 
     if forecast_horizon_hour>0:
         df = df[['prediction']]
+    else:
+        df = df[['target', 'prediction']]
 
     df = df.rename({'target': f'target_{forecast_horizon_hour}', 'prediction': f'+{forecast_horizon_hour}hours'}, axis=1)
 
