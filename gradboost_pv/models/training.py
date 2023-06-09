@@ -122,7 +122,7 @@ def run_experiment(
                 ],
                 axis=1,
             ),
-            columns=["test_mse", "test_mae","prediction","target"],
+            columns=["test_mse", "test_mae", "prediction", "target"],
             index=y_test.index,
         )
         errors_train = pd.DataFrame(
@@ -135,15 +135,15 @@ def run_experiment(
                 ],
                 axis=1,
             ),
-            columns=["train_mse", "train_mae","prediction","target"],
+            columns=["train_mse", "train_mae", "prediction", "target"],
             index=y_train.index,
         )
 
-        if '.pkl' in errors_local_save_file:
+        if ".pkl" in errors_local_save_file:
             errors = pd.concat([errors_train, errors_test], axis=1)
             errors.to_pickle(errors_local_save_file)
 
-        if '.csv' in errors_local_save_file:
+        if ".csv" in errors_local_save_file:
             errors_train.to_csv(errors_local_save_file.replace(".csv", "_train.csv"))
             errors_test.to_csv(errors_local_save_file.replace(".csv", "_test.csv"))
 
