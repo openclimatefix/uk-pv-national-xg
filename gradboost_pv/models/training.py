@@ -135,8 +135,13 @@ def run_experiment(
             index=y_train.index,
         )
 
-        errors = pd.concat([errors_train, errors_test], axis=1)
-        errors.to_pickle(errors_local_save_file)
+        if '.pkl' in errors_local_save_file:
+            errors = pd.concat([errors_train, errors_test], axis=1)
+            errors.to_pickle(errors_local_save_file)
+
+        if '.csv' in errors_local_save_file:
+            errors_train.to_csv(errors_local_save_file.replace(".csv", "_train.csv"))
+            errors_test.to_csv(errors_local_save_file.replace(".csv", "_test.csv"))
 
     return ExperimentSummary(
         train_mse,
