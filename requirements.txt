@@ -18,3 +18,4 @@ boto3
 s3fs
 testcontainers
 psutil
+ocf-ml-metrics
