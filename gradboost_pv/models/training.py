@@ -137,7 +137,7 @@ def run_experiment(
     booster_hyperparam_config: dict = DEFFAULT_HYPARAM_CONFIG,
     save_errors_locally: bool = False,
     errors_local_save_file: Optional[Union[Path, str]] = None,
-    forecast_hour: int = 0
+    forecast_hour: int = 0,
 ) -> ExperimentSummary:
     """Trains and tests XGBoost Regression model.
 
@@ -161,8 +161,8 @@ def run_experiment(
     X_test, y_test = X.loc[X.index >= "2021-01-01"], y.loc[y.index >= "2021-01-01"]
     X_train = X_train.dropna()
     X_test = X_test.dropna()
-    y_train = y_train.fillna(0.)
-    y_test = y_test.fillna(0.)
+    y_train = y_train.fillna(0.0)
+    y_test = y_test.fillna(0.0)
 
     model = XGBRegressor(**booster_hyperparam_config)
     model.fit(X_train, y_train)
@@ -184,49 +184,55 @@ def run_experiment(
     non_night_percentiles = []
     for idx, alpha in enumerate(ALPHA):
         y_pred_test_alpha = y_pred_train[:, idx]
-        percentile_counts.append(np.sum(y_train['target'].values < y_pred_test_alpha))
+        percentile_counts.append(np.sum(y_train["target"].values < y_pred_test_alpha))
         non_night_percentiles.append(
             np.sum(
-                (y_train['target'].values < y_pred_test_alpha)
-                & (y_train['target'].values > 0.01)
+                (y_train["target"].values < y_pred_test_alpha) & (y_train["target"].values > 0.01)
             )
         )
     # Get percentage of total test data that is below each percentile
-    percentile_counts = np.array(percentile_counts) / len(y_train['target'].values)
-    non_night_percentiles = np.array(non_night_percentiles) / len(y_train[y_train['target'].values > 0.01]['target'].values)
+    percentile_counts = np.array(percentile_counts) / len(y_train["target"].values)
+    non_night_percentiles = np.array(non_night_percentiles) / len(
+        y_train[y_train["target"].values > 0.01]["target"].values
+    )
     # Print out each of the pinball test losses and percentile counts
     for idx, alpha in enumerate(ALPHA):
         print(
-            f"Percentile: {alpha}, train pinball: {np.round(train_pinballs[idx], 5)}, percentile count: {np.round(percentile_counts[idx], 5)} " \
+            f"Percentile: {alpha}, train pinball: {np.round(train_pinballs[idx], 5)}, percentile count: {np.round(percentile_counts[idx], 5)} "
             f"non-night percentile count: {np.round(non_night_percentiles[idx], 5)}"
         )
-    print(f"Number of positive values for actual - 90th percentile: {np.sum((y_test['target'].values - y_pred_test[:, 2]) > 0.)}/{len(y_test['target'].values)}")
-    print(f"Number of positive values for actual - 10th percentile: {np.sum((y_test['target'].values - y_pred_test[:, 0]) > 0.)}/{len(y_test['target'].values)}")
-    print(f"Number of positive values for actual - median: {np.sum((y_test['target'].values - y_pred_test[:, 1]) > 0.)}/{len(y_test['target'].values)}")
+    print(
+        f"Number of positive values for actual - 90th percentile: {np.sum((y_test['target'].values - y_pred_test[:, 2]) > 0.)}/{len(y_test['target'].values)}"
+    )
+    print(
+        f"Number of positive values for actual - 10th percentile: {np.sum((y_test['target'].values - y_pred_test[:, 0]) > 0.)}/{len(y_test['target'].values)}"
+    )
+    print(
+        f"Number of positive values for actual - median: {np.sum((y_test['target'].values - y_pred_test[:, 1]) > 0.)}/{len(y_test['target'].values)}"
+    )
     percentile_counts = []
     non_night_percentiles = []
     for idx, alpha in enumerate(ALPHA):
         y_pred_test_alpha = y_pred_test[:, idx]
-        percentile_counts.append(np.sum(y_test['target'].values < y_pred_test_alpha))
+        percentile_counts.append(np.sum(y_test["target"].values < y_pred_test_alpha))
         non_night_percentiles.append(
-            np.sum(
-                (y_test['target'].values < y_pred_test_alpha)
-                & (y_test['target'].values > 0.01)
-            )
+            np.sum((y_test["target"].values < y_pred_test_alpha) & (y_test["target"].values > 0.01))
         )
     # Get percentage of total test data that is below each percentile
-    percentile_counts = np.array(percentile_counts) / len(y_test['target'].values)
-    non_night_percentiles = np.array(non_night_percentiles) / len(y_test[y_test['target'].values > 0.01]['target'].values)
+    percentile_counts = np.array(percentile_counts) / len(y_test["target"].values)
+    non_night_percentiles = np.array(non_night_percentiles) / len(
+        y_test[y_test["target"].values > 0.01]["target"].values
+    )
     # Print out each of the pinball test losses and percentile counts
     for idx, alpha in enumerate(ALPHA):
         print(
-            f"Percentile: {alpha}, test pinball: {np.round(test_pinballs[idx], 5)}, percentile count: {np.round(percentile_counts[idx], 5)} " \
+            f"Percentile: {alpha}, test pinball: {np.round(test_pinballs[idx], 5)}, percentile count: {np.round(percentile_counts[idx], 5)} "
             f"non-night percentile count: {np.round(non_night_percentiles[idx], 5)}"
         )
     # Now plot the predictions vs the actuals
     xx = list(range(y_test.shape[0]))
     percent_90 = y_pred_test[:, 2]
-    plt.plot(xx, y_test['target'].values, label="Actual")
+    plt.plot(xx, y_test["target"].values, label="Actual")
     plt.plot(xx, percent_90, label="90th Percentile")
     plt.legend()
     plt.title(f"{forecast_hour} Actual vs 90th Percentile Prediction")
@@ -234,14 +240,14 @@ def run_experiment(
     plt.cla()
     plt.clf()
     plt.close()
-    plt.plot(xx, y_test['target'].values - percent_90)
+    plt.plot(xx, y_test["target"].values - percent_90)
     plt.title(f"{forecast_hour} Actual minus 90th Percentile Prediction")
     plt.savefig(f"{forecast_hour}_actual_minus_90th_percentile.png")
     plt.cla()
     plt.clf()
     plt.close()
     xx = list(range(1000))
-    plt.plot(xx, y_test['target'].values[:1000], label="Actual")
+    plt.plot(xx, y_test["target"].values[:1000], label="Actual")
     plt.plot(xx, percent_90[:1000], label="90th Percentile")
     plt.legend()
     plt.title(f"{forecast_hour} Actual vs 90th Percentile Prediction first 1000")
@@ -249,14 +255,14 @@ def run_experiment(
     plt.cla()
     plt.clf()
     plt.close()
-    plt.plot(xx, y_test['target'].values[:1000] - percent_90[:1000])
+    plt.plot(xx, y_test["target"].values[:1000] - percent_90[:1000])
     plt.title(f"{forecast_hour} Actual minus 90th Percentile Prediction first 1000")
     plt.savefig(f"{forecast_hour}_actual_minus_90th_percentile_first_1000.png")
     plt.cla()
     plt.clf()
     plt.close()
     xx = list(range(200))
-    plt.plot(xx, y_test['target'].values[:200], label="Actual")
+    plt.plot(xx, y_test["target"].values[:200], label="Actual")
     plt.plot(xx, percent_90[:200], label="90th Percentile")
     plt.legend()
     plt.title(f"{forecast_hour} Actual vs 90th Percentile Prediction first 200")
@@ -266,17 +272,21 @@ def run_experiment(
     plt.close()
     # Plot the prediction minus the actual
 
-
-
     # Daytime only
-    y_pred_test_daytime = y_pred_test[y_test['target'].values > 0.01]
-    y_test_daytime = y_test[y_test['target'].values > 0.01]
-    print(f"Number of positive values for actual - 90th percentile: {np.sum((y_test_daytime['target'].values - y_pred_test_daytime[:, 2]) > 0.)}/{len(y_test_daytime['target'].values)}")
-    print(f"Number of positive values for actual - 10th percentile: {np.sum((y_test_daytime['target'].values - y_pred_test_daytime[:, 0]) > 0.)}/{len(y_test_daytime['target'].values)}")
-    print(f"Number of positive values for actual - median: {np.sum((y_test_daytime['target'].values - y_pred_test_daytime[:, 1]) > 0.)}/{len(y_test_daytime['target'].values)}")
+    y_pred_test_daytime = y_pred_test[y_test["target"].values > 0.01]
+    y_test_daytime = y_test[y_test["target"].values > 0.01]
+    print(
+        f"Number of positive values for actual - 90th percentile: {np.sum((y_test_daytime['target'].values - y_pred_test_daytime[:, 2]) > 0.)}/{len(y_test_daytime['target'].values)}"
+    )
+    print(
+        f"Number of positive values for actual - 10th percentile: {np.sum((y_test_daytime['target'].values - y_pred_test_daytime[:, 0]) > 0.)}/{len(y_test_daytime['target'].values)}"
+    )
+    print(
+        f"Number of positive values for actual - median: {np.sum((y_test_daytime['target'].values - y_pred_test_daytime[:, 1]) > 0.)}/{len(y_test_daytime['target'].values)}"
+    )
     xx = list(range(y_test_daytime.shape[0]))
     percent_90 = y_pred_test_daytime[:, 2]
-    plt.plot(xx, y_test_daytime['target'].values, label="Actual")
+    plt.plot(xx, y_test_daytime["target"].values, label="Actual")
     plt.plot(xx, percent_90, label="90th Percentile")
     plt.legend()
     plt.title(f"{forecast_hour} Actual vs 90th Percentile Prediction Daytime")
@@ -284,14 +294,14 @@ def run_experiment(
     plt.cla()
     plt.clf()
     plt.close()
-    plt.plot(xx, y_test_daytime['target'].values - percent_90)
+    plt.plot(xx, y_test_daytime["target"].values - percent_90)
     plt.title(f"{forecast_hour} Actual minus 90th Percentile Prediction Daytime")
     plt.savefig(f"{forecast_hour}_actual_minus_90th_percentile_daytime.png")
     plt.cla()
     plt.clf()
     plt.close()
     xx = list(range(1000))
-    plt.plot(xx, y_test_daytime['target'].values[:1000], label="Actual")
+    plt.plot(xx, y_test_daytime["target"].values[:1000], label="Actual")
     plt.plot(xx, percent_90[:1000], label="90th Percentile")
     plt.legend()
     plt.title(f"{forecast_hour} Actual vs 90th Percentile Prediction Daytime first 1000")
@@ -300,7 +310,7 @@ def run_experiment(
     plt.clf()
     plt.close()
     xx = list(range(200))
-    plt.plot(xx, y_test_daytime['target'].values[:200], label="Actual")
+    plt.plot(xx, y_test_daytime["target"].values[:200], label="Actual")
     plt.plot(xx, percent_90[:200], label="90th Percentile")
     plt.legend()
     plt.title(f"{forecast_hour} Actual vs 90th Percentile Prediction Daytime first 200")
@@ -315,7 +325,6 @@ def run_experiment(
         y_test, y_pred_test
     )
     print(f"Median test MAE: {np.round(test_mae, 5)}")
-
 
     if save_errors_locally:
         errors_test = pd.DataFrame(
@@ -347,14 +356,14 @@ def run_experiment(
     # Create a dataframe
     national_id = 0
     latitudes = results.X_test["latitude"].values
-    longitudes = results.X_test["longitude"].values
-    actual_pv_outturn_mw = y_test["target"].values
-    predicted_pv_outturn_mw = y_pred_test[:, 1]["target"].values
-    capacity_mw = results.X_test["capacity_mw"].values
-    t0_datetime = results.X_test["t0_datetime"].values
-    target_datetime = results.X_test["target_datetime"].values
-    national_ids = np.repeat(national_id, len(latitudes))
-    t0_actual_pv_outturn_mw = results.X_test["t0_actual_pv_outturn_mw"].values
+    results.X_test["longitude"].values
+    y_test["target"].values
+    y_pred_test[:, 1]["target"].values
+    results.X_test["capacity_mw"].values
+    results.X_test["t0_datetime"].values
+    results.X_test["target_datetime"].values
+    np.repeat(national_id, len(latitudes))
+    results.X_test["t0_actual_pv_outturn_mw"].values
 
     return ExperimentSummary(
         train_pinballs[1],
