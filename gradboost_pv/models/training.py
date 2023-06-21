@@ -166,7 +166,14 @@ def run_experiment(
     y_test = y_test.fillna(0.)
     print(X_test.keys())
     print(y_test.keys())
+    print(len(X_test))
+    print(y_test)
+    print(X_test)
+    print(y_test.index)
     exit()
+    print(len(y_test))
+    print(len(X_train))
+    print(len(y_train))
     model = XGBRegressor(**booster_hyperparam_config)
     model.fit(X_train, y_train)
 
@@ -351,12 +358,11 @@ def run_experiment(
     # Need to calculate the lat/lon of center of UK
     # Need to calculate datetimes from sin/cos of month, day, and hour, then add forecast_horizon to get target time
 
-    national_id = 0
     capacity_mw = 13500 # Roughly
     actual_pv_outturn_mw = y_test["target"].to_numpy() * capacity_mw
-    predicted_pv_outturn_mw = y_pred_test[:, 1] * capacity_mw # Median value
-    t0_datetime = X_test["t0_datetime"].to_numpy() # Need to change this, as datetime is not included by default, jsut sin/cos, so could read in from NWP for 2021
-    target_datetime = t0_datetime + np.timedelta64(forecast_hour, "h")
+    predicted_pv_outturn_mw = y_pred_test * capacity_mw # Median value
+    t0_datetime = X_test.index
+    target_datetime = y_test.index
     national_ids = np.repeat(national_id, len(t0_datetime))
     latitudes = np.repeat(55.3781, len(t0_datetimes)) # 55.3781
     longitudes = np.repeat(-3.4360, len(t0_datetimes)) # -3.4360
