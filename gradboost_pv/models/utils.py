@@ -13,8 +13,8 @@ NWP_VARIABLE_NUM = 17
 NWP_STEP_HORIZON = 37
 # GCP paths for nwp and gsp data
 NWP_FPATH = "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV_intermediate_version_3.zarr/"
-GSP_FPATH = "gs://solar-pv-nowcasting-data/PV/GSP/v5/pv_gsp.zarr"
-DEFAULT_DIRECTORY_TO_PROCESSED_NWP = Path(__file__).parents[2] / "data"
+GSP_FPATH = "/home/jacob/Development/pv_gsp.zarr/"
+DEFAULT_DIRECTORY_TO_PROCESSED_NWP = "/home/jacob/Development/National_averaged/"
 
 ORDERED_NWP_FEATURE_VARIABLES = [
     "cdcb",
