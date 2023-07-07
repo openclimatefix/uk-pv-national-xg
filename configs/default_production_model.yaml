@@ -34,6 +34,12 @@ forecast_horizon_hours:
     28,
     29,
     30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
   ]
 # nwp_variables: ['dswrf', 'hcct', 'lcc', 't', 'sde', 'wdir10']  TODO - get all NWPs
 nwp_variables: ["dswrf", "lcc", "t", "wdir10"]
