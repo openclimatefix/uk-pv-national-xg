@@ -14,54 +14,6 @@ from sklearn.metrics import (
 )
 from xgboost import XGBRegressor
 
-"""
-Dump from training on 2021 and testing on 2020
-
-```
-0
-[15:48:15] WARNING: /home/jacob/Development/xgboost/src/learner.cc:753:
-Parameters: { "scale_pos_weight" } are not used.
-
-Percentile: 0.1, train pinball: 0.00282, percentile count: 0.53132 non-night percentile count: 0.11743
-Percentile: 0.5, train pinball: 0.005, percentile count: 0.74744 non-night percentile count: 0.52492
-Percentile: 0.9, train pinball: 0.0038, percentile count: 0.92279 non-night percentile count: 0.85077
-Number of positive values for actual - 90th percentile: 3084/17568
-Number of positive values for actual - 10th percentile: 6861/17568
-Number of positive values for actual - median: 4916/17568
-Number of positive values for actual - 90th percentile: 2994/8008
-Number of positive values for actual - 10th percentile: 6377/8008
-Number of positive values for actual - median: 4620/8008
-Median test MAE: 0.01
-
-
-1
-[15:49:16] WARNING: /home/jacob/Development/xgboost/src/learner.cc:753:
-Parameters: { "scale_pos_weight" } are not used.
-
-Percentile: 0.1, train pinball: 0.00388, percentile count: 0.53286 non-night percentile count: 0.12085
-Percentile: 0.5, train pinball: 0.0074, percentile count: 0.75453 non-night percentile count: 0.54109
-Percentile: 0.9, train pinball: 0.00658, percentile count: 0.92312 non-night percentile count: 0.85024
-Number of positive values for actual - 90th percentile: 3394/17568
-Number of positive values for actual - 10th percentile: 6769/17568
-Number of positive values for actual - median: 5056/17568
-Number of positive values for actual - 90th percentile: 3329/8008
-Number of positive values for actual - 10th percentile: 6281/8008
-Number of positive values for actual - median: 4762/8008
-Median test MAE: 0.0148
-[INFO][2023-05-15 03:50:41] : Trained model for 1 hour forecast. training_results=ExperimentSummary(pinball_train_loss=0.0011104914595641766, pinball_test_loss=0.007401900459080166, pinball_train_10_percentile_loss=0.0016597589380497257, pinball_test_10_percentile_loss=0.0038831984857985538, pinball_train_90_percentile_loss=0.0007042405500994957, pinball_test_90_percentile_loss=0.006581151385691185, mae_train_loss=0.002220982919128353, mae_test_loss=0.014803800918160331, model=XGBRegressor(base_score=None, booster='gbtree', callbacks=None,
-             colsample_bylevel=1, colsample_bynode=1, colsample_bytree=0.85,
-             early_stopping_rounds=None, enable_categorical=False,
-             eval_metric=None, feature_types=None, gamma=0, gpu_id=-1,
-             grow_policy='depthwise', importance_type=None,
-             interaction_constraints='', learning_rate=0.005, max_bin=256,
-             max_cat_threshold=64, max_cat_to_onehot=None, max_delta_step=None,
-             max_depth=80, max_leaves=0, min_child_weight=5, missing=nan,
-             monotone_constraints=None, multi_strategy=None, n_estimators=1250,
-             n_jobs=-1, num_parallel_tree=1, objective='reg:quantileerror', ...))
-2
-
-```
-"""
 
 ALPHA = np.array([0.1, 0.5, 0.9])
 
@@ -148,6 +100,7 @@ def run_experiment(
         defaults to DEFFAULT_HYPARAM_CONFIG.
         save_errors_locally (bool, optional): Defaults to False.
         errors_local_save_file (Optional[Union[Path, str]], optional): Defaults to None.
+        forecast_hour (int, optional): Defaults to 0
 
     Returns:
         ExperimentSummary: Object storing some basic fit/evalutation stats + model.
@@ -302,11 +255,14 @@ def run_experiment(
         y_pred_test_daytime = y_pred_test[y_test["target"].values > 0.01]
         y_test_daytime = y_test[y_test["target"].values > 0.01]
         # print(f"Number of positive values for actual - 90th percentile:
-        # {np.sum((y_test_daytime['target'].values - y_pred_test_daytime[:, 2]) > 0.)}/{len(y_test_daytime['target'].values)}")
+        # {np.sum((y_test_daytime['target'].values - y_pred_test_daytime[:, 2]) > 0.)}
+        # /{len(y_test_daytime['target'].values)}")
         # print(f"Number of positive values for actual - 10th percentile:
-        # {np.sum((y_test_daytime['target'].values - y_pred_test_daytime[:, 0]) > 0.)}/{len(y_test_daytime['target'].values)}")
+        # {np.sum((y_test_daytime['target'].values - y_pred_test_daytime[:, 0]) > 0.)}
+        # /{len(y_test_daytime['target'].values)}")
         # print(f"Number of positive values for actual - median:
-        # {np.sum((y_test_daytime['target'].values - y_pred_test_daytime[:, 1]) > 0.)}/{len(y_test_daytime['target'].values)}")
+        # {np.sum((y_test_daytime['target'].values - y_pred_test_daytime[:, 1]) > 0.)}
+        # /{len(y_test_daytime['target'].values)}")
         xx = list(range(y_test_daytime.shape[0]))
         percent_90 = y_pred_test_daytime[:, 2]
         plt.plot(xx, y_test_daytime["target"].values, label="Actual")
@@ -415,10 +371,10 @@ def run_experiment(
 
     # Create dataframe from numpy arrays from above
     results_df = pd.DataFrame(
-        national_ids,latitudes,
+        national_ids,latitudes, 
         longitudes, t0_datetime, target_datetime,
          actual_pv_outturn_mw,
-          predicted_pv_outturn_mw,
+          predicted_pv_outturn_mw, 
           t0_actual_pv_outturn_mw, capacitys,
         columns=["id",
                  "latitude",
