@@ -213,12 +213,22 @@ def run_experiment(
         # Print out each of the pinball test losses and percentile counts
         # for idx, alpha in enumerate(ALPHA):
         #    print(
-        #        f"Percentile: {alpha}, train pinball: {np.round(train_pinballs[idx], 5)}, percentile count: {np.round(percentile_counts[idx], 5)} " \
-        #        f"non-night percentile count: {np.round(non_night_percentiles[idx], 5)}"
+        #        f"Percentile:
+        #        {alpha}, train pinball: {np.round(train_pinballs[idx], 5)},
+        #        percentile count:
+        #        {np.round(percentile_counts[idx], 5)} " \
+        #        f"non-night percentile count:
+        #        {np.round(non_night_percentiles[idx], 5)}"
         #    )
-        # print(f"Number of positive values for actual - 90th percentile: {np.sum((y_test['target'].values - y_pred_test[:, 2]) > 0.)}/{len(y_test['target'].values)}")
-        # print(f"Number of positive values for actual - 10th percentile: {np.sum((y_test['target'].values - y_pred_test[:, 0]) > 0.)}/{len(y_test['target'].values)}")
-        # print(f"Number of positive values for actual - median: {np.sum((y_test['target'].values - y_pred_test[:, 1]) > 0.)}/{len(y_test['target'].values)}")
+        # print(f"Number of positive values for actual - 90th percentile:
+        # {np.sum((y_test['target'].values - y_pred_test[:, 2]) > 0.)}
+        # /{len(y_test['target'].values)}")
+        # print(f"Number of positive values for actual - 10th percentile:
+        # {np.sum((y_test['target'].values - y_pred_test[:, 0]) > 0.)}
+        # /{len(y_test['target'].values)}")
+        # print(f"Number of positive values for actual - median:
+        # {np.sum((y_test['target'].values - y_pred_test[:, 1]) > 0.)}
+        # /{len(y_test['target'].values)}")
         percentile_counts = []
         non_night_percentiles = []
         for idx, alpha in enumerate(ALPHA):
@@ -240,7 +250,9 @@ def run_experiment(
         # Print out each of the pinball test losses and percentile counts
         # for idx, alpha in enumerate(ALPHA):
         #    print(
-        #        f"Percentile: {alpha}, test pinball: {np.round(test_pinballs[idx], 5)}, percentile count: {np.round(percentile_counts[idx], 5)} " \
+        #        f"Percentile:
+        #        {alpha}, test pinball: {np.round(test_pinballs[idx], 5)},
+        #        percentile count: {np.round(percentile_counts[idx], 5)} " \
         #        f"non-night percentile count: {np.round(non_night_percentiles[idx], 5)}"
         #    )
         # Now plot the predictions vs the actuals
@@ -289,9 +301,12 @@ def run_experiment(
         # Daytime only
         y_pred_test_daytime = y_pred_test[y_test["target"].values > 0.01]
         y_test_daytime = y_test[y_test["target"].values > 0.01]
-        # print(f"Number of positive values for actual - 90th percentile: {np.sum((y_test_daytime['target'].values - y_pred_test_daytime[:, 2]) > 0.)}/{len(y_test_daytime['target'].values)}")
-        # print(f"Number of positive values for actual - 10th percentile: {np.sum((y_test_daytime['target'].values - y_pred_test_daytime[:, 0]) > 0.)}/{len(y_test_daytime['target'].values)}")
-        # print(f"Number of positive values for actual - median: {np.sum((y_test_daytime['target'].values - y_pred_test_daytime[:, 1]) > 0.)}/{len(y_test_daytime['target'].values)}")
+        # print(f"Number of positive values for actual - 90th percentile:
+        # {np.sum((y_test_daytime['target'].values - y_pred_test_daytime[:, 2]) > 0.)}/{len(y_test_daytime['target'].values)}")
+        # print(f"Number of positive values for actual - 10th percentile:
+        # {np.sum((y_test_daytime['target'].values - y_pred_test_daytime[:, 0]) > 0.)}/{len(y_test_daytime['target'].values)}")
+        # print(f"Number of positive values for actual - median:
+        # {np.sum((y_test_daytime['target'].values - y_pred_test_daytime[:, 1]) > 0.)}/{len(y_test_daytime['target'].values)}")
         xx = list(range(y_test_daytime.shape[0]))
         percent_90 = y_pred_test_daytime[:, 2]
         plt.plot(xx, y_test_daytime["target"].values, label="Actual")
@@ -350,7 +365,8 @@ def run_experiment(
     print(f"Pinball 10th percentiles: {pinball_losses_10_percentile}")
     print(f"Pinball 90th percentiles: {pinball_losses_90_percentile}")
     print(
-        f"Pinball Ranges: {np.asarray(pinball_losses_90_percentile) - np.asarray(pinball_losses_10_percentile)}"
+        f"Pinball Ranges:"
+        f" {np.asarray(pinball_losses_90_percentile) - np.asarray(pinball_losses_10_percentile)}"
     )
     print("---------ONLY DONE DURING 10-14 TIMEPERIOD-----------")
 
@@ -383,7 +399,8 @@ def run_experiment(
 
     # Create a dataframe
     # Need to calculate the lat/lon of center of UK
-    # Need to calculate datetimes from sin/cos of month, day, and hour, then add forecast_horizon to get target time
+    # Need to calculate datetimes from sin/cos of month,
+    # day, and hour, then add forecast_horizon to get target time
     """
     capacity_mw = 13500 # Roughly
     actual_pv_outturn_mw = y_test["target"].to_numpy() * capacity_mw
@@ -398,7 +415,11 @@ def run_experiment(
 
     # Create dataframe from numpy arrays from above
     results_df = pd.DataFrame(
-        national_ids,latitudes, longitudes, t0_datetime, target_datetime, actual_pv_outturn_mw, predicted_pv_outturn_mw, t0_actual_pv_outturn_mw, capacitys,
+        national_ids,latitudes, 
+        longitudes, t0_datetime, target_datetime,
+         actual_pv_outturn_mw,
+          predicted_pv_outturn_mw, 
+          t0_actual_pv_outturn_mw, capacitys,
         columns=["id",
                  "latitude",
                  "longitude",
