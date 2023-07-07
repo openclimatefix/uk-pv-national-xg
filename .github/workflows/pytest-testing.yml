@@ -71,7 +71,7 @@ jobs:
           cd tests
           eval $PYTEST_COMMAND
       - name: Show coverage
-        run: coverage report -m
+        run: cd tests && coverage report -m
       - name: "Upload coverage to Codecov"
         uses: codecov/codecov-action@v2
         with:
