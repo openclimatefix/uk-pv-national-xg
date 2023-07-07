@@ -476,6 +476,8 @@ class NationalBoostInferenceModel(BaseInferenceModel):
                 model_output,
                 covariates.installed_capacity_mwp_at_inference_time,
                 covariates.inference_datetime_utc,
+                lower_scaling=0.4,
+                upper_scaling=1.6,
             )
             for hour, model_output in predictions.items()
         }
@@ -488,6 +490,8 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         forecast: np.ndarray,
         pv_capacity_mwp: float,
         inference_datetime: np.datetime64,
+        lower_scaling: float = 1.0,
+        upper_scaling: float = 1.0,
     ) -> Prediction:
         """Sanitize model output into Prediction object"""
 
@@ -503,6 +507,6 @@ class NationalBoostInferenceModel(BaseInferenceModel):
             inference_datetime,
             inference_datetime + np.timedelta64(forecast_horizon_hours, "h"),
             pv_amount[1],
-            pv_amount[0],
-            pv_amount[2],
+            pv_amount[0] * lower_scaling,
+            pv_amount[2] * upper_scaling,
         )
