@@ -415,10 +415,10 @@ def run_experiment(
 
     # Create dataframe from numpy arrays from above
     results_df = pd.DataFrame(
-        national_ids,latitudes, 
+        national_ids,latitudes,
         longitudes, t0_datetime, target_datetime,
          actual_pv_outturn_mw,
-          predicted_pv_outturn_mw, 
+          predicted_pv_outturn_mw,
           t0_actual_pv_outturn_mw, capacitys,
         columns=["id",
                  "latitude",
