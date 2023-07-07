@@ -68,7 +68,7 @@ jobs:
           export PYTHONPATH=${PYTHONPATH}:""
           export PYTEST_COMMAND="pytest $PYTESTCOV $PYTESTXDIST -s"
           echo "Will be running this command: $PYTEST_COMMAND"
-          python -m pytest --cov=gradboost_pv --cov-report=xml -n 2 --dist=loadfile -s
+          cd uk-national-pv-xg && python -m pytest --cov=gradboost_pv --cov-report=xml -n 2 --dist=loadfile -s
           eval $PYTEST_COMMAND
       - name: Show coverage
         run: coverage report -m
