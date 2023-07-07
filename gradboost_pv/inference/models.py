@@ -84,9 +84,9 @@ class Prediction:
 
     datetime_of_model_inference_utc: np.datetime64
     datetime_of_target_utc: np.datetime64
-    forecast_kw: float
-    forecast_kw_10th_percentile: float
-    forecast_kw_90th_percentile: float
+    forecast_mw: float
+    forecast_mw_plevel_10: float
+    forecast_mw_plevel_90: float
 
 
 def _load_default_nwp_variables() -> list[str]:
