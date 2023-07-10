@@ -8,6 +8,7 @@ jobs:
       matrix:
         python-version: ["3.10"]
         os: ["ubuntu-latest"]
+        test_dir: ["tests/"]
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -68,7 +69,7 @@ jobs:
           # export PYTHONPATH=${PYTHONPATH}:""
           export PYTEST_COMMAND="pytest $PYTESTCOV $PYTESTXDIST -s"
           echo "Will be running this command: $PYTEST_COMMAND"
-          cd tests
+          cd ${{ matrix.test_dir }}
           eval $PYTEST_COMMAND
       - name: Show coverage
         run: cd tests && coverage report -m
