@@ -501,8 +501,10 @@ class NationalBoostInferenceModel(BaseInferenceModel):
             forecast: Forecast values, with quantiles, currently assumes shape (3,)
             pv_capacity_mwp: PV capacity in MWp
             inference_datetime: Datetime that the prediction was made
-            lower_scaling: Scaling value for lower quantile, to make sure that the lower quantile is what it says it is
-            upper_scaling: Scaling value for upper quantile, to make sure that the upper quantile is what it says it is
+            lower_scaling: Scaling value for lower quantile,
+                to make sure that the lower quantile is what it says it is
+            upper_scaling: Scaling value for upper quantile,
+                to make sure that the upper quantile is what it says it is
 
         Returns:
             Prediction: Prediction object
