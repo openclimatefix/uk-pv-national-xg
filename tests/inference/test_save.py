@@ -16,7 +16,7 @@ from nowcasting_datamodel.models import (
 @freeze_time("2023-01-01")
 def test_save_to_database(db_session, me_latest):
     results_df = pd.DataFrame(
-        columns=["datetime_of_target_utc", "forecast_kw"],
+        columns=["datetime_of_target_utc", "forecast_mw"],
         data=[
             [datetime(2023, 1, 1), 7.3],
             [datetime(2023, 1, 1, 1), 8.3],
