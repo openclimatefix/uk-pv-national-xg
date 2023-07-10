@@ -46,7 +46,7 @@ def parse_args():
         default=DEFAULT_VARIABLES_FOR_PROCESSING,
         help="Numerical Weather Prediction Variables for model selection.",
     )
-    parser.add_argument("--display_plots", default=True, action=BooleanOptionalAction)
+    parser.add_argument("--display_plots", default=False, action=BooleanOptionalAction)
     parser.add_argument("--save_to_s3", default=False, action=BooleanOptionalAction)
     parser.add_argument(
         "--s3_access_key", type=str, required=False, default=None, help="s3 API Access Key"

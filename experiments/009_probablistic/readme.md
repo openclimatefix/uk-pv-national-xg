@@ -88,3 +88,8 @@ Fraction of actual generation below the percentile for only daylight (Generation
 | 34      | 0.26168 | 0.49789 | 0.67299 |
 | 35      | 0.26133 | 0.48521 | 0.67172 |
 | 36      | 0.26343 | 0.49714 | 0.67256 |
+
+## Quantile Scaling Results
+
+For scaling the production quantiles to be more accurate, from this, we need to scale
+the lower quantile by 0.4 to be actually at 10%, and the upper quantile by 1.6 to actually be at 90%.

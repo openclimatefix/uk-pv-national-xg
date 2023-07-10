@@ -493,7 +493,20 @@ class NationalBoostInferenceModel(BaseInferenceModel):
         lower_scaling: float = 1.0,
         upper_scaling: float = 1.0,
     ) -> Prediction:
-        """Sanitize model output into Prediction object"""
+        """
+        Process the model output into the prediction format
+
+        Args:
+            forecast_horizon_hours: Forecast horizon in hours
+            forecast: Forecast values, with quantiles, currently assumes shape (3,)
+            pv_capacity_mwp: PV capacity in MWp
+            inference_datetime: Datetime that the prediction was made
+            lower_scaling: Scaling value for lower quantile, to make sure that the lower quantile is what it says it is
+            upper_scaling: Scaling value for upper quantile, to make sure that the upper quantile is what it says it is
+
+        Returns:
+            Prediction: Prediction object
+        """
 
         # TODO - model does not always predict 0.0 in night time, check clipping threshold.
         if self._config.clip_near_zero_predictions:
