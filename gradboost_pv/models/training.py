@@ -146,18 +146,15 @@ def run_experiment(
             train_pinballs.append(train_pinball)
             test_pinballs.append(test_pinball)
 
-        percentile_counts = []
         non_night_percentiles = []
         for idx, alpha in enumerate(ALPHA):
             y_pred_test_alpha = y_pred_test[:, idx]
-            percentile_counts.append(np.sum(y_test["target"].values < y_pred_test_alpha))
             non_night_percentiles.append(
                 np.sum(
                     (y_test["target"].values < y_pred_test_alpha) & (y_test["target"].values > 0.01)
                 )
             )
         # Get percentage of total test data that is below each percentile
-        percentile_counts = np.array(percentile_counts) / len(y_test["target"].values)
         non_night_percentiles = np.array(non_night_percentiles) / len(
             y_test[y_test["target"].values > 0.01]["target"].values
         )
