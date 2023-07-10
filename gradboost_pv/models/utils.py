@@ -16,6 +16,7 @@ NWP_FPATH = "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV_intermediate_ve
 GSP_FPATH = "gs://solar-pv-nowcasting-data/PV/GSP/v5/pv_gsp.zarr"
 DEFAULT_DIRECTORY_TO_PROCESSED_NWP = Path(__file__).parents[2] / "data"
 
+
 ORDERED_NWP_FEATURE_VARIABLES = [
     "cdcb",
     "lcc",
