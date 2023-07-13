@@ -8,11 +8,16 @@ from typing import Optional, Union
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.metrics import (
+    mean_absolute_error,
+    mean_pinball_loss,
+)
 from xgboost import XGBRegressor
 
+ALPHA = np.array([0.1, 0.5, 0.9])
+
 DEFFAULT_HYPARAM_CONFIG = {
-    "objective": "reg:squarederror",
+    "objective": "reg:quantileerror",
     "booster": "gbtree",
     "colsample_bylevel": 1,
     "colsample_bynode": 1,
@@ -40,6 +45,7 @@ DEFFAULT_HYPARAM_CONFIG = {
     "scale_pos_weight": 1,
     "subsample": 0.65,
     "tree_method": "hist",
+    "quantile_alpha": ALPHA,
     "validate_parameters": 1,
     "verbosity": 1,
 }
@@ -49,8 +55,12 @@ DEFFAULT_HYPARAM_CONFIG = {
 class ExperimentSummary:
     """Object for storing basic model train/test results"""
 
-    mse_train_loss: float
-    mse_test_loss: float
+    pinball_train_loss: float
+    pinball_test_loss: float
+    pinball_train_10_percentile_loss: float
+    pinball_test_10_percentile_loss: float
+    pinball_train_90_percentile_loss: float
+    pinball_test_90_percentile_loss: float
     mae_train_loss: float
     mae_test_loss: float
     model: XGBRegressor
@@ -78,6 +88,7 @@ def run_experiment(
     booster_hyperparam_config: dict = DEFFAULT_HYPARAM_CONFIG,
     save_errors_locally: bool = False,
     errors_local_save_file: Optional[Union[Path, str]] = None,
+    forecast_hour: int = 0,
 ) -> ExperimentSummary:
     """Trains and tests XGBoost Regression model.
 
@@ -88,6 +99,7 @@ def run_experiment(
         defaults to DEFFAULT_HYPARAM_CONFIG.
         save_errors_locally (bool, optional): Defaults to False.
         errors_local_save_file (Optional[Union[Path, str]], optional): Defaults to None.
+        forecast_hour (int, optional): Defaults to 0
 
     Returns:
         ExperimentSummary: Object storing some basic fit/evalutation stats + model.
@@ -96,20 +108,67 @@ def run_experiment(
     if save_errors_locally:
         assert errors_local_save_file is not None
 
-    # use 2020 as training period and 2021 as test
-    X_train, y_train = X.loc[X.index < "2021-01-01"], y.loc[y.index < "2021-01-01"]
-    X_test, y_test = X.loc[X.index >= "2021-01-01"], y.loc[y.index >= "2021-01-01"]
+    maes = []
+    pinball_losses = []
+    pinball_losses_10_percentile = []
+    pinball_losses_90_percentile = []
+    # Cross validate based on the year
+    for year in range(2016, 2023):
+        # use 2020 as training period and 2021 as test, train on 2022 as well
+        X_train, y_train = (
+            X.loc[(X.index < f"{year}-01-01") | (X.index > f"{year}-12-31")],
+            y.loc[(y.index < f"{year}-01-01") | (y.index > f"{year}-12-31")],
+        )
+        X_test, y_test = (
+            X.loc[(X.index >= f"{year}-01-01") & (X.index <= f"{year}-12-31")],
+            y.loc[(y.index >= f"{year}-01-01") & (y.index <= f"{year}-12-31")],
+        )
+        # Select only the rows in test where the time of day is between 10am and 2pm
+        X_test = X_test.loc[(X_test.index.hour >= 10) & (X_test.index.hour <= 14)]
+        y_test = y_test.loc[(y_test.index.hour >= 10) & (y_test.index.hour <= 14)]
+        X_train = X_train.dropna()
+        X_test = X_test.dropna()
+        y_train = y_train.fillna(0.0)
+        y_test = y_test.fillna(0.0)
+        model = XGBRegressor(**booster_hyperparam_config)
+        model.fit(X_train, y_train)
 
-    model = XGBRegressor(**booster_hyperparam_config)
-    model.fit(X_train, y_train)
+        y_pred_test, y_pred_train = model.predict(X_test), model.predict(X_train)
 
-    y_pred_test, y_pred_train = model.predict(X_test), model.predict(X_train)
-    train_mse, test_mse = mean_squared_error(y_train, y_pred_train), mean_squared_error(
-        y_test, y_pred_test
-    )
-    train_mae, test_mae = mean_absolute_error(y_train, y_pred_train), mean_absolute_error(
-        y_test, y_pred_test
-    )
+        train_pinballs = []
+        test_pinballs = []
+        for idx, alpha in enumerate(ALPHA):
+            y_pred_train_alpha = y_pred_train[:, idx]
+            y_pred_test_alpha = y_pred_test[:, idx]
+            train_pinball, test_pinball = mean_pinball_loss(
+                y_train, y_pred_train_alpha, alpha=alpha
+            ), mean_pinball_loss(y_test, y_pred_test_alpha, alpha=alpha)
+            train_pinballs.append(train_pinball)
+            test_pinballs.append(test_pinball)
+
+        non_night_percentiles = []
+        for idx, alpha in enumerate(ALPHA):
+            y_pred_test_alpha = y_pred_test[:, idx]
+            non_night_percentiles.append(
+                np.sum(
+                    (y_test["target"].values < y_pred_test_alpha) & (y_test["target"].values > 0.01)
+                )
+            )
+        # Get percentage of total test data that is below each percentile
+        non_night_percentiles = np.array(non_night_percentiles) / len(
+            y_test[y_test["target"].values > 0.01]["target"].values
+        )
+        pinball_losses.append(non_night_percentiles[1])
+        pinball_losses_10_percentile.append(non_night_percentiles[0])
+        pinball_losses_90_percentile.append(non_night_percentiles[2])
+
+        y_pred_train = y_pred_train[:, 1]
+        y_pred_test = y_pred_test[:, 1]
+        train_mae, test_mae = mean_absolute_error(y_train, y_pred_train), mean_absolute_error(
+            y_test, y_pred_test
+        )
+        # print(f"Median test MAE: {np.round(test_mae, 5)}")
+        maes.append(test_mae)
 
     if save_errors_locally:
         errors_test = pd.DataFrame(
@@ -139,8 +198,12 @@ def run_experiment(
         errors.to_pickle(errors_local_save_file)
 
     return ExperimentSummary(
-        train_mse,
-        test_mse,
+        train_pinballs[1],
+        test_pinballs[1],
+        train_pinballs[0],
+        test_pinballs[0],
+        train_pinballs[2],
+        test_pinballs[2],
         train_mae,
         test_mae,
         model,  # just save the last trained model for nwp
@@ -150,21 +213,48 @@ def run_experiment(
 def plot_loss_metrics(results_by_step: dict[int, ExperimentSummary]):
     """Convenience function for plotting loss metrics over forecast horizons"""
     title_mapping = {
-        "MAE Train": lambda x: x.mae_train_loss,
-        "MAE Test": lambda x: x.mae_test_loss,
-        "MSE Train": lambda x: x.mse_train_loss,
-        "MSE Test": lambda x: x.mse_test_loss,
+        "MAE Median Train": lambda x: x.mae_train_loss,
+        "MAE Median Test": lambda x: x.mae_test_loss,
+    }
+    title_mapping2 = {
+        "0.5 Train": lambda x: x.pinball_train_loss,
+        "0.5 Test": lambda x: x.pinball_test_loss,
+        "0.1 Train": lambda x: x.pinball_train_10_percentile_loss,
+        "0.1 Test": lambda x: x.pinball_test_10_percentile_loss,
+        "0.9 Train": lambda x: x.pinball_train_90_percentile_loss,
+        "0.9 Test": lambda x: x.pinball_test_90_percentile_loss,
     }
 
-    fig, axes = plt.subplots(2, 2, figsize=(10, 10))
+    fig, axes = plt.subplots(2, 2, figsize=(20, 20))
 
     for idx, title in enumerate(title_mapping.keys()):
-        row = int(idx > 1)
-        col = idx % 2
+        # Put each metric on a different row
+        col = idx
         data = pd.Series({step: title_mapping[title](r) for step, r in results_by_step.items()})
-        axes[row][col].scatter(data.index, data.values)
-        axes[row][col].set_title(title)
-        axes[row][col].set_xlabel("Forecast Horizon (Hours from init_time_utc)")
+        axes[0][col].scatter(data.index, data.values)
+        axes[0][col].set_title(title)
+        axes[0][col].set_xlabel("Forecast Horizon (Hours from init_time_utc)")
+    for idx, title in enumerate(title_mapping2.keys()):
+        if "Test" in title:
+            continue
+        # Put each metric on a different row
+        data = pd.Series({step: title_mapping2[title](r) for step, r in results_by_step.items()})
+        axes[1][0].scatter(data.index, data.values, label=title.split(" ")[0].strip())
+        # Add title to legend for axis
+
+    axes[1][0].set_title("Pinball Losses Train")
+    axes[1][0].set_xlabel("Forecast Horizon (Hours from init_time_utc)")
+    axes[1][0].legend()
+    for idx, title in enumerate(title_mapping2.keys()):
+        if "Train" in title:
+            continue
+        # Put each metric on a different row
+        col = idx
+        data = pd.Series({step: title_mapping2[title](r) for step, r in results_by_step.items()})
+        axes[1][1].scatter(data.index, data.values, label=title.split(" ")[0].strip())
+    axes[1][1].set_title("Pinball Losses Test")
+    axes[1][1].set_xlabel("Forecast Horizon (Hours from init_time_utc)")
+    axes[1][1].legend()
 
     plt.show()
 

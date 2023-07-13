@@ -95,6 +95,8 @@ def build_datasets_from_local(
         gsp.index.shift(freq=forecast_horizon).sort_values(ascending=False).values
     )
     _X = pd.DataFrame(_X, index=gsp.index, columns=TRIG_DATETIME_FEATURE_NAMES)
+    # Only pick indicies that are in the processed_nwp_slice
+    _X = _X.loc[processed_nwp_slice.index]
     X = pd.concat([processed_nwp_slice, X_diff, _X], axis=1).sort_index(ascending=False).dropna()
 
     solar_variables = build_solar_pv_features(
@@ -107,7 +109,15 @@ def build_datasets_from_local(
 
     # add lagged values of GSP PV
     pv_autoregressive_lags = build_lagged_features(gsp, forecast_horizon)
-
+    common_index = solar_variables.index.intersection(pv_autoregressive_lags.index).intersection(
+        X.index
+    )
+    X = X.loc[common_index]
+    pv_autoregressive_lags = pv_autoregressive_lags.loc[common_index]
+    solar_variables = solar_variables.loc[common_index]
+    # Print the index that does exist in X but does not in solar_variables
+    # Remove duplicate index from X
+    X = X[~X.index.duplicated(keep="first")]
     X = pd.concat(
         [
             X,

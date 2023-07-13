@@ -84,7 +84,9 @@ class Prediction:
 
     datetime_of_model_inference_utc: np.datetime64
     datetime_of_target_utc: np.datetime64
-    forecast_kw: float
+    forecast_mw: float
+    forecast_mw_plevel_10: float
+    forecast_mw_plevel_90: float
 
 
 def _load_default_nwp_variables() -> list[str]:
@@ -474,6 +476,8 @@ class NationalBoostInferenceModel(BaseInferenceModel):
                 model_output,
                 covariates.installed_capacity_mwp_at_inference_time,
                 covariates.inference_datetime_utc,
+                lower_scaling=0.4,
+                upper_scaling=1.6,
             )
             for hour, model_output in predictions.items()
         }
@@ -483,20 +487,41 @@ class NationalBoostInferenceModel(BaseInferenceModel):
     def process_model_output(
         self,
         forecast_horizon_hours: Hour,
-        forecast: float,
+        forecast: np.ndarray,
         pv_capacity_mwp: float,
         inference_datetime: np.datetime64,
+        lower_scaling: float = 1.0,
+        upper_scaling: float = 1.0,
     ) -> Prediction:
-        """Sanitize model output into Prediction object"""
+        """
+        Process the model output into the prediction format
+
+        Args:
+            forecast_horizon_hours: Forecast horizon in hours
+            forecast: Forecast values, with quantiles, currently assumes shape (3,)
+            pv_capacity_mwp: PV capacity in MWp
+            inference_datetime: Datetime that the prediction was made
+            lower_scaling: Scaling value for lower quantile,
+                to make sure that the lower quantile is what it says it is
+            upper_scaling: Scaling value for upper quantile,
+                to make sure that the upper quantile is what it says it is
+
+        Returns:
+            Prediction: Prediction object
+        """
 
         # TODO - model does not always predict 0.0 in night time, check clipping threshold.
         if self._config.clip_near_zero_predictions:
-            forecast = forecast if forecast > self._config.clip_near_zero_value_percentage else 0.0
+            forecast = np.asarray(
+                [f if f > self._config.clip_near_zero_value_percentage else 0.0 for f in forecast]
+            )
 
         pv_amount = forecast * pv_capacity_mwp
 
         return Prediction(
             inference_datetime,
             inference_datetime + np.timedelta64(forecast_horizon_hours, "h"),
-            pv_amount,
+            pv_amount[1],
+            pv_amount[0] * lower_scaling,
+            pv_amount[2] * upper_scaling,
         )

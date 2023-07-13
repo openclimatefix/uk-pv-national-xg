@@ -3,7 +3,7 @@ pandas==1.5.3
 xarray
 xgboost
 ocf_datapipes
-nowcasting_datamodel==1.4.1
+nowcasting_datamodel==1.4.14
 scikit-learn
 matplotlib
 geopandas
@@ -18,3 +18,4 @@ boto3
 s3fs
 testcontainers
 psutil
+ocf-ml-metrics

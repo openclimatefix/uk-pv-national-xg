@@ -29,7 +29,9 @@ def process_predictions_to_pandas(predictions: Dict[Hour, Prediction]) -> pd.Dat
                 {
                     "datetime_of_model_inference_utc": pred.datetime_of_model_inference_utc,
                     "datetime_of_target_utc": pred.datetime_of_target_utc,
-                    "forecast_kw": pred.forecast_kw,
+                    "forecast_mw": pred.forecast_mw,
+                    "forecast_mw_plevel_10": pred.forecast_mw_plevel_10,
+                    "forecast_mw_plevel_90": pred.forecast_mw_plevel_90,
                 },
                 orient="index",
             ).T

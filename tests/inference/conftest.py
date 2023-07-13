@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 import xarray as xr
 from xgboost import XGBRegressor
+import numpy as np
 
 from nowcasting_datamodel.fake import make_fake_me_latest
 
@@ -21,7 +22,7 @@ PATH_TO_TEST_MODEL_CONFIG = Path(__file__).parents[1] / "configs" / "test_model_
 def mock_model():
     """Loads a model at example forecast horizon"""
 
-    model = XGBRegressor()
+    model = XGBRegressor(quantile_alpha=np.array([0.1, 0.5, 0.9]), objective="reg:quantileerror")
 
     # 33 features
     xtrain = [[1] * 33]
@@ -72,6 +73,6 @@ def sample_prod_gsp_data() -> xr.Dataset:
 
 @pytest.fixture()
 def me_latest(db_session):
-    metric_values = make_fake_me_latest(session=db_session, model_name="National_xg")
+    metric_values = make_fake_me_latest(session=db_session)
     db_session.add_all(metric_values)
     db_session.commit()

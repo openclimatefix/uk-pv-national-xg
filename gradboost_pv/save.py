@@ -18,7 +18,7 @@ def save_to_database(results_df: pd.DataFrame, session: Session):
     """
 
     # TODO fix, wrong units somewhere
-    results_df["forecast_mw"] = results_df["forecast_kw"].astype(float)
+    results_df["forecast_mw"] = results_df["forecast_mw"].astype(float)
     results_df["target_datetime_utc"] = pd.to_datetime(results_df["datetime_of_target_utc"])
 
     # interpolate to 30 minutes
