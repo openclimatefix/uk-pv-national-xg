@@ -2,7 +2,7 @@ numpy
 pandas==1.5.3
 xarray
 xgboost
-ocf_datapipes
+ocf_datapipes==1.2.41
 nowcasting_datamodel==1.4.14
 scikit-learn
 matplotlib
