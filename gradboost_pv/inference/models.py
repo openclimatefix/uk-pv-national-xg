@@ -522,6 +522,6 @@ class NationalBoostInferenceModel(BaseInferenceModel):
             inference_datetime,
             inference_datetime + np.timedelta64(forecast_horizon_hours, "h"),
             pv_amount[1],
-            pv_amount[0] * lower_scaling,
-            pv_amount[2] * upper_scaling,
+            pv_amount[1] - (pv_amount[1] - pv_amount[0]) * lower_scaling,
+            pv_amount[1] + (pv_amount[2] - pv_amount[1]) * upper_scaling,
         )
