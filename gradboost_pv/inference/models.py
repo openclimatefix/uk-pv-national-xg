@@ -476,7 +476,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
                 model_output,
                 covariates.installed_capacity_mwp_at_inference_time,
                 covariates.inference_datetime_utc,
-                lower_scaling=0.4,
+                lower_scaling=1.6,
                 upper_scaling=1.6,
             )
             for hour, model_output in predictions.items()
@@ -522,6 +522,6 @@ class NationalBoostInferenceModel(BaseInferenceModel):
             inference_datetime,
             inference_datetime + np.timedelta64(forecast_horizon_hours, "h"),
             pv_amount[1],
-            pv_amount[0] * lower_scaling,
-            pv_amount[2] * upper_scaling,
+            pv_amount[1] - (pv_amount[1] - pv_amount[0]) * lower_scaling,
+            pv_amount[1] + (pv_amount[2] - pv_amount[1]) * upper_scaling,
         )
