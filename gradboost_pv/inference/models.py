@@ -476,7 +476,7 @@ class NationalBoostInferenceModel(BaseInferenceModel):
                 model_output,
                 covariates.installed_capacity_mwp_at_inference_time,
                 covariates.inference_datetime_utc,
-                lower_scaling=0.4,
+                lower_scaling=1.6,
                 upper_scaling=1.6,
             )
             for hour, model_output in predictions.items()
