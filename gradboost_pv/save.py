@@ -21,14 +21,20 @@ def save_to_database(results_df: pd.DataFrame, session: Session):
     results_df["forecast_mw"] = results_df["forecast_mw"].astype(float)
     results_df["target_datetime_utc"] = pd.to_datetime(results_df["datetime_of_target_utc"])
 
-    # interpolate to 30 minutes
+    # select columns
     results_df.set_index("datetime_of_target_utc", drop=True, inplace=True)
-    results_df = pd.DataFrame(
-        results_df["forecast_mw"].resample("30T").interpolate(method="linear")
-    )
-    results_df["target_datetime_utc"] = results_df.index
+    cols = ["forecast_mw", "forecast_mw_plevel_10", "forecast_mw_plevel_90"]
+    results_df = results_df[cols]
 
-    logger.debug(results_df[["forecast_mw", "target_datetime_utc"]])
+    # make all columns are floats
+    for c in cols:
+        results_df[c] = results_df[c].astype(float)
+
+    # interpolate to every 30 minutes
+    results_df = results_df.resample("30T").interpolate(method="linear")
+
+    results_df["target_datetime_utc"] = results_df.index
+    logger.debug(results_df[cols])
 
     forecast_sql = convert_df_to_national_forecast(
         forecast_values_df=results_df,
