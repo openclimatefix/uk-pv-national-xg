@@ -30,14 +30,18 @@ def test_filter_forecasts_on_sun_elevation(forecasts):
     # night time
     forecasts[0].forecast_values[0].target_time = datetime(2022, 1, 1)
     forecasts[0].forecast_values[0].expected_power_generation_megawatts = 1
+    forecasts[0].forecast_values[0].properties = {"10": 90, "90": 1000}
 
     # day time
     forecasts[0].forecast_values[1].target_time = datetime(2022, 1, 1, 12)
     forecasts[0].forecast_values[1].expected_power_generation_megawatts = 1
+    forecasts[0].forecast_values[1].properties = {"10": 90, "90": 1000}
 
     forecasts[-1].location.gsp_id = 338
 
     _ = filter_forecasts_on_sun_elevation(forecasts)
 
     assert forecasts[0].forecast_values[0].expected_power_generation_megawatts == 0
+    assert forecasts[0].forecast_values[0].properties == {"10": 0, "90": 0}
     assert forecasts[0].forecast_values[1].expected_power_generation_megawatts == 1
+    assert forecasts[0].forecast_values[1].properties == {"10": 90, "90": 1000}

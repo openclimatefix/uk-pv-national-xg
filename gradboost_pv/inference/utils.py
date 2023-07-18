@@ -48,6 +48,14 @@ def filter_forecasts_on_sun_elevation(forecasts: List[ForecastSQL]) -> List[Fore
                     # note sql objects are connected, so we can edit in place
                     forecast.forecast_values[i].expected_power_generation_megawatts = 0
 
+                    # set plevels also to zero
+                    properties = forecast.forecast_values[i].properties
+                    if isinstance(properties, dict):
+                        if "10" in properties.keys():
+                            forecast.forecast_values[i].properties["10"] = 0.0
+                        if "90" in properties.keys():
+                            forecast.forecast_values[i].properties["90"] = 0.0
+
         else:
             logger.debug("No elevations below zero, so need to filter")
 
