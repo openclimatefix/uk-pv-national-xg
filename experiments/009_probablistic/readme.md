@@ -1,3 +1,5 @@
+
+
 # Probablistic Forecasts with Quantile Regression
 
 Lets investigate the effects of quantil regression on the results. The deciles of 10% and 90% are also forecasted.
@@ -89,7 +91,37 @@ Fraction of actual generation below the percentile for only daylight (Generation
 | 35      | 0.26133 | 0.48521 | 0.67172 |
 | 36      | 0.26343 | 0.49714 | 0.67256 |
 
+
 ## Quantile Scaling Results
 
 For scaling the production quantiles to be more accurate, from this, we need to scale
 the lower quantile by 0.4 to be actually at 10%, and the upper quantile by 1.6 to actually be at 90%.
+
+
+# Monthly Errors and Percentiles
+
+These plots are from training on the whole 2016-2022 dataset (the production model) and testing on the whole dataset, so will be smaller errors than in production, but does give an idea of how well the models do throughout the year.
+
+Percentiles:
+
+![0_pinball_losses_monthly](https://github.com/openclimatefix/uk-pv-national-xg/assets/7170359/d02fc568-df2d-4989-9fcb-3ef0264a288b)
+![1_pinball_losses_monthly](https://github.com/openclimatefix/uk-pv-national-xg/assets/7170359/fded24d7-2536-4153-b3ff-1e7382865acb)
+![2_pinball_losses_monthly](https://github.com/openclimatefix/uk-pv-national-xg/assets/7170359/8294efac-8c91-4264-9816-a67092c155d5)
+![4_pinball_losses_monthly](https://github.com/openclimatefix/uk-pv-national-xg/assets/7170359/9fbf9199-4bc0-4df7-8678-2e1e9138a276)
+![8_pinball_losses_monthly](https://github.com/openclimatefix/uk-pv-national-xg/assets/7170359/0b99f433-0d9c-4c45-8185-bf6c0c91ed32)
+![12_pinball_losses_monthly](https://github.com/openclimatefix/uk-pv-national-xg/assets/7170359/f563a760-6a89-4716-9a24-2581d424fce5)
+![24_pinball_losses_monthly](https://github.com/openclimatefix/uk-pv-national-xg/assets/7170359/27b92f86-b1da-45a6-a939-a0cd9ca8707e)
+![36_pinball_losses_monthly](https://github.com/openclimatefix/uk-pv-national-xg/assets/7170359/7692993b-b208-4351-8a48-cfe8b12e968a)
+
+
+Monthly MAE:
+![0_mae_monthly](https://github.com/openclimatefix/uk-pv-national-xg/assets/7170359/2736fafb-1fe7-45a0-84f6-bb9dfb2dfddc)
+![1_mae_monthly](https://github.com/openclimatefix/uk-pv-national-xg/assets/7170359/07232ed6-fceb-47d5-b7f2-e0089869e210)
+![2_mae_monthly](https://github.com/openclimatefix/uk-pv-national-xg/assets/7170359/f2c4b156-c388-4417-9548-aad49f8de89b)
+![4_mae_monthly](https://github.com/openclimatefix/uk-pv-national-xg/assets/7170359/3267aeb4-228c-4c23-9678-a45e0ad696ed)
+![8_mae_monthly](https://github.com/openclimatefix/uk-pv-national-xg/assets/7170359/9714f916-9d2e-401b-a493-710481a2a57a)
+![12_mae_monthly](https://github.com/openclimatefix/uk-pv-national-xg/assets/7170359/a5373018-6a1e-4a5a-870f-d49c60af9284)
+![24_mae_monthly](https://github.com/openclimatefix/uk-pv-national-xg/assets/7170359/50ab93e5-43ac-474d-98e9-9e85a04d6417)
+![36_mae_monthly](https://github.com/openclimatefix/uk-pv-national-xg/assets/7170359/27b3b980-d394-4a5c-bd1f-43460291651f)
+
+
