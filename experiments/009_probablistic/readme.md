@@ -123,5 +123,3 @@ Monthly MAE:
 ![12_mae_monthly](https://github.com/openclimatefix/uk-pv-national-xg/assets/7170359/a5373018-6a1e-4a5a-870f-d49c60af9284)
 ![24_mae_monthly](https://github.com/openclimatefix/uk-pv-national-xg/assets/7170359/50ab93e5-43ac-474d-98e9-9e85a04d6417)
 ![36_mae_monthly](https://github.com/openclimatefix/uk-pv-national-xg/assets/7170359/27b3b980-d394-4a5c-bd1f-43460291651f)
-
-
