@@ -117,12 +117,12 @@ def run_experiment(
         print(year)
         # use 2020 as training period and 2021 as test, train on 2022 as well
         X_train, y_train = (
-            X.loc[(X.index < f"{year}-01-01") | (X.index > f"{year}-12-31")],
-            y.loc[(y.index < f"{year}-01-01") | (y.index > f"{year}-12-31")],
+            X.loc[(X.index < f"{year}-01-01") | (X.index > f"{year}-12-31 23:30:00")],
+            y.loc[(y.index < f"{year}-01-01") | (y.index > f"{year}-12-31 23:30:00")],
         )
         X_test, y_test = (
-            X.loc[(X.index >= f"{year}-01-01") & (X.index <= f"{year}-12-31")],
-            y.loc[(y.index >= f"{year}-01-01") & (y.index <= f"{year}-12-31")],
+            X.loc[(X.index >= f"{year}-01-01") & (X.index <= f"{year}-12-31 23:30:00")],
+            y.loc[(y.index >= f"{year}-01-01") & (y.index <= f"{year}-12-31 23:30:00")],
         )
         # Select only the rows in test where the time of day is between 10am and 2pm
         # X_test = X_test.loc[(X_test.index.hour >= 10) & (X_test.index.hour <= 14)]
