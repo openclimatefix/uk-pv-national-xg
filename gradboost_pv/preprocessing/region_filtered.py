@@ -15,7 +15,7 @@ from shapely.ops import unary_union
 
 from gradboost_pv.models.utils import DEFAULT_DIRECTORY_TO_PROCESSED_NWP
 
-logger = logging.getLogger(__name__
+logger = logging.getLogger(__name__)
 
 ESO_GEO_JSON_URL = (
     "https://data.nationalgrideso.com/backend/dataset/2810092e-d4b2-472f-b955-d8bea01f9ec0/"
