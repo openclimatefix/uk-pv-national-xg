@@ -1,6 +1,8 @@
 """Preprocess NWP data using geospatial mask"""
 import itertools
+import logging
 import multiprocessing as mp
+import os
 from pathlib import Path
 from typing import Iterable, Tuple, Union
 
@@ -14,6 +16,8 @@ from shapely.ops import unary_union
 
 from gradboost_pv.models.utils import DEFAULT_DIRECTORY_TO_PROCESSED_NWP
 
+logger = logging.getLogger(__name__)
+
 ESO_GEO_JSON_URL = (
     "https://data.nationalgrideso.com/backend/dataset/2810092e-d4b2-472f-b955-d8bea01f9ec0/"
     "resource/08534dae-5408-4e31-8639-b579c8f1c50b/download/gsp_regions_20220314.geojson"
@@ -21,6 +25,9 @@ ESO_GEO_JSON_URL = (
 
 # processing takes quite a long time, so take a subset for now.
 DEFAULT_VARIABLES_FOR_PROCESSING = [
+    "mcc",
+    "lcc",
+    "hcc",
     "dswrf",
     # "hcct",
     "lcc",
@@ -78,6 +85,8 @@ def process_eso_uk_multipolygon(uk_shape: gpd.GeoDataFrame) -> MultiPolygon:
     Returns:
         MultiPolygon: Object representing the UK-region.
     """
+    logger.info("Processing UK region shapefile")
+
     concat_poly = unary_union(uk_shape["geometry"].values)
 
     return MultiPolygon(Polygon(p.exterior) for p in concat_poly.geoms)
@@ -97,6 +106,8 @@ def generate_polygon_mask(
         np.ndarray: 2-D array where each (x_i, y_i) value signifies if the point (x_i, y_i) belong
         to the polygon.
     """
+    logger.info("Generating polygon mask")
+
     coords = list(map(lambda x: Point(x[0], x[1]), itertools.product(coordinates_x, coordinates_y)))
 
     # create a mask for belonging to UK region or not
@@ -136,12 +147,22 @@ def check_points_in_multipolygon_multiprocessed(
     Returns:
         np.ndarray: _description_
     """
+    filename = "./data/uk_region_mask_train.npy"
+    if os.path.exists(filename):
+        logger.debug("Loading UK region mask from file")
+        return np.load(filename)
     items = [(point, polygon) for point in points]
     results = list()
     with mp.Pool(num_processes) as pool:
         for result in pool.starmap(check_point_in_multipolygon, items):
             results.append(result)
-    return np.asarray(results)
+
+    a = np.asarray(results)
+
+    logger.debug(f"Saving UK region mask from file {filename}")
+    np.save("./data/uk_region_mask_train.npy", a)
+
+    return a
 
 
 def _process_nwp(
@@ -184,11 +205,15 @@ class NWPUKRegionMaskedDatasetBuilder:
         Returns:
             xr.DataArray: UK-region mask, on NWP (x,y) coords
         """
+
+        logger.info("Loading UK region mask from National Grid ESO")
+
         uk_polygon = query_eso_geojson()
         uk_polygon = process_eso_uk_multipolygon(uk_polygon)
         mask = generate_polygon_mask(self.nwp.coords["x"], self.nwp.coords["y"], uk_polygon)
 
         # convert numpy array to xarray mask for a 1 variable, 1 step times series of (x,y) coords
+        logger.debug("Making mask")
         mask = xr.DataArray(
             np.tile(mask.T, (len(self.nwp.coords["init_time"]), 1, 1)),
             dims=["init_time", "x", "y"],
