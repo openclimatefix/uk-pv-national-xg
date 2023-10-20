@@ -34,6 +34,7 @@ DEFAULT_VARIABLES_FOR_PROCESSING = [
 
 MAX_FORECAST_HORIZON = 36
 
+
 def build_local_save_path(
     forecast_horizon_step: int,
     variable: str,
@@ -54,8 +55,10 @@ def build_local_save_path(
     """
 
     if forecast_horizon_step > MAX_FORECAST_HORIZON:
-        logger.debug(f"Forecast horizon step {forecast_horizon_step} exceeds maximum of "
-                     f"{MAX_FORECAST_HORIZON}, so reducing to {MAX_FORECAST_HORIZON}")
+        logger.debug(
+            f"Forecast horizon step {forecast_horizon_step} exceeds maximum of "
+            f"{MAX_FORECAST_HORIZON}, so reducing to {MAX_FORECAST_HORIZON}"
+        )
         forecast_horizon_step = MAX_FORECAST_HORIZON
 
     return (
