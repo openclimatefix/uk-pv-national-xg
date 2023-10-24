@@ -1,5 +1,6 @@
 """Preprocess NWP data using geospatial mask"""
 import itertools
+import logging
 import multiprocessing as mp
 from pathlib import Path
 from typing import Iterable, Tuple, Union
@@ -13,6 +14,8 @@ from shapely.geometry import MultiPolygon, Point, Polygon
 from shapely.ops import unary_union
 
 from gradboost_pv.models.utils import DEFAULT_DIRECTORY_TO_PROCESSED_NWP
+
+logger = logging.getLogger(__name__)
 
 ESO_GEO_JSON_URL = (
     "https://data.nationalgrideso.com/backend/dataset/2810092e-d4b2-472f-b955-d8bea01f9ec0/"
@@ -28,6 +31,8 @@ DEFAULT_VARIABLES_FOR_PROCESSING = [
     # "sde",
     "wdir10",
 ]
+
+MAX_FORECAST_HORIZON = 36
 
 
 def build_local_save_path(
@@ -48,6 +53,14 @@ def build_local_save_path(
     Returns:
         Tuple[Path, Path]: Paths to respective datasets
     """
+
+    if forecast_horizon_step > MAX_FORECAST_HORIZON:
+        logger.debug(
+            f"Forecast horizon step {forecast_horizon_step} exceeds maximum of "
+            f"{MAX_FORECAST_HORIZON}, so reducing to {MAX_FORECAST_HORIZON}"
+        )
+        forecast_horizon_step = MAX_FORECAST_HORIZON
+
     return (
         directory
         / str(year)
