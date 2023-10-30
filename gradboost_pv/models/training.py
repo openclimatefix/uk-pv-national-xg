@@ -114,18 +114,19 @@ def run_experiment(
     pinball_losses_90_percentile = []
     # Cross validate based on the year
     for year in range(2016, 2023):
+        print(year)
         # use 2020 as training period and 2021 as test, train on 2022 as well
         X_train, y_train = (
-            X.loc[(X.index < f"{year}-01-01") | (X.index > f"{year}-12-31")],
-            y.loc[(y.index < f"{year}-01-01") | (y.index > f"{year}-12-31")],
+            X.loc[(X.index < f"{year}-01-01") | (X.index > f"{year}-12-31 23:30:00")],
+            y.loc[(y.index < f"{year}-01-01") | (y.index > f"{year}-12-31 23:30:00")],
         )
         X_test, y_test = (
-            X.loc[(X.index >= f"{year}-01-01") & (X.index <= f"{year}-12-31")],
-            y.loc[(y.index >= f"{year}-01-01") & (y.index <= f"{year}-12-31")],
+            X.loc[(X.index >= f"{year}-01-01") & (X.index <= f"{year}-12-31 23:30:00")],
+            y.loc[(y.index >= f"{year}-01-01") & (y.index <= f"{year}-12-31 23:30:00")],
         )
         # Select only the rows in test where the time of day is between 10am and 2pm
-        X_test = X_test.loc[(X_test.index.hour >= 10) & (X_test.index.hour <= 14)]
-        y_test = y_test.loc[(y_test.index.hour >= 10) & (y_test.index.hour <= 14)]
+        # X_test = X_test.loc[(X_test.index.hour >= 10) & (X_test.index.hour <= 14)]
+        # y_test = y_test.loc[(y_test.index.hour >= 10) & (y_test.index.hour <= 14)]
         X_train = X_train.dropna()
         X_test = X_test.dropna()
         y_train = y_train.fillna(0.0)
@@ -163,9 +164,11 @@ def run_experiment(
         pinball_losses_90_percentile.append(non_night_percentiles[2])
 
         y_pred_train = y_pred_train[:, 1]
-        y_pred_test = y_pred_test[:, 1]
+        y_pred_test_50 = y_pred_test[:, 1]
+        y_pred_test_10 = y_pred_test[:, 0]
+        y_pred_test_90 = y_pred_test[:, 2]
         train_mae, test_mae = mean_absolute_error(y_train, y_pred_train), mean_absolute_error(
-            y_test, y_pred_test
+            y_test, y_pred_test_50
         )
         # print(f"Median test MAE: {np.round(test_mae, 5)}")
         maes.append(test_mae)
@@ -174,12 +177,16 @@ def run_experiment(
         errors_test = pd.DataFrame(
             data=np.concatenate(
                 [
-                    (y_test.values - y_pred_test.reshape(-1, 1)) ** 2,
-                    np.abs(y_test.values - y_pred_test.reshape(-1, 1)),
+                    y_test.values,
+                    y_pred_test_50.reshape(-1, 1),
+                    y_pred_test_10.reshape(-1, 1),
+                    y_pred_test_90.reshape(-1, 1),
+                    (y_test.values - y_pred_test_50.reshape(-1, 1)) ** 2,
+                    np.abs(y_test.values - y_pred_test_50.reshape(-1, 1)),
                 ],
                 axis=1,
             ),
-            columns=["test_mse", "test_mae"],
+            columns=["y", "pred", "p10", "p90", "test_mse", "test_mae"],
             index=y_test.index,
         )
         errors_train = pd.DataFrame(
@@ -195,7 +202,7 @@ def run_experiment(
         )
 
         errors = pd.concat([errors_train, errors_test], axis=1)
-        errors.to_pickle(errors_local_save_file)
+        errors.to_csv(errors_local_save_file)
 
     return ExperimentSummary(
         train_pinballs[1],
