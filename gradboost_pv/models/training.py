@@ -173,37 +173,42 @@ def run_experiment(
         # print(f"Median test MAE: {np.round(test_mae, 5)}")
         maes.append(test_mae)
 
-    if save_errors_locally:
-        errors_test = pd.DataFrame(
-            data=np.concatenate(
-                [
-                    y_test.values,
-                    y_pred_test_50.reshape(-1, 1),
-                    y_pred_test_10.reshape(-1, 1),
-                    y_pred_test_90.reshape(-1, 1),
-                    (y_test.values - y_pred_test_50.reshape(-1, 1)) ** 2,
-                    np.abs(y_test.values - y_pred_test_50.reshape(-1, 1)),
-                ],
-                axis=1,
-            ),
-            columns=["y", "pred", "p10", "p90", "test_mse", "test_mae"],
-            index=y_test.index,
-        )
-        errors_train = pd.DataFrame(
-            data=np.concatenate(
-                [
-                    (y_train.values - y_pred_train.reshape(-1, 1)) ** 2,
-                    np.abs(y_train.values - y_pred_train.reshape(-1, 1)),
-                ],
-                axis=1,
-            ),
-            columns=["train_mse", "train_mae"],
-            index=y_train.index,
-        )
+        if save_errors_locally:
+            errors_test = pd.DataFrame(
+                data=np.concatenate(
+                    [
+                        y_test.values,
+                        y_pred_test_50.reshape(-1, 1),
+                        y_pred_test_10.reshape(-1, 1),
+                        y_pred_test_90.reshape(-1, 1),
+                        (y_test.values - y_pred_test_50.reshape(-1, 1)) ** 2,
+                        np.abs(y_test.values - y_pred_test_50.reshape(-1, 1)),
+                    ],
+                    axis=1,
+                ),
+                columns=["y", "pred", "p10", "p90", "test_mse", "test_mae"],
+                index=y_test.index,
+            )
+            errors_train = pd.DataFrame(
+                data=np.concatenate(
+                    [
+                        (y_train.values - y_pred_train.reshape(-1, 1)) ** 2,
+                        np.abs(y_train.values - y_pred_train.reshape(-1, 1)),
+                    ],
+                    axis=1,
+                ),
+                columns=["train_mse", "train_mae"],
+                index=y_train.index,
+            )
 
-        errors = pd.concat([errors_train, errors_test], axis=1)
-        errors.to_csv(errors_local_save_file)
+            errors = pd.concat([errors_train, errors_test], axis=1)
 
+            errors_local_save_file_year = f"{errors_local_save_file}_year_{year}.csv"
+
+            print(errors_local_save_file_year) 
+
+            errors.to_csv(errors_local_save_file_year)
+            
     return ExperimentSummary(
         train_pinballs[1],
         test_pinballs[1],
