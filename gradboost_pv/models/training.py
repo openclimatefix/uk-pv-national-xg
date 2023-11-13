@@ -205,10 +205,10 @@ def run_experiment(
 
             errors_local_save_file_year = f"{errors_local_save_file}_year_{year}.csv"
 
-            print(errors_local_save_file_year) 
+            print(errors_local_save_file_year)
 
             errors.to_csv(errors_local_save_file_year)
-            
+
     return ExperimentSummary(
         train_pinballs[1],
         test_pinballs[1],
