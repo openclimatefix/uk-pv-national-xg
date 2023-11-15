@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 env = os.environ.get("ENVIRONMENT", "development")
-BUCKET_NAME = f"nowcasting-national-forecaster-models-{env}"
+BUCKET_NAME = os.environ.get("ML_MODEL_BUCKET", f"uk-national-forecaster-models-{env}")
 MODEL = "v4"
 
 
