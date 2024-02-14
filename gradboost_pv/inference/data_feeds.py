@@ -102,6 +102,12 @@ class ProductionOpenNWPNetcdfIterDataPipe(IterDataPipe):
                 chunks=None,  # Reading Satellite Zarr benefits from setting chunks='auto'
                 # (see issue #456) but 'auto' massively slows down reading NWPs.
             )
+
+            # Only select 'dswrf' 'lcc' 'sde' 't' 'wdir10' in nwp.variables
+            # this helps reduce the memory usage
+            # TODO make this dynamic
+            nwp = nwp.sel(variable=["dswrf", "lcc", "sde", "t", "wdir10"])
+
             nwp = self._process_nwp_from_netcdf(nwp)
             yield nwp
 
