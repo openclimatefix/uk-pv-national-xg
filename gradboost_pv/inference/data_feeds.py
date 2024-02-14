@@ -109,7 +109,8 @@ class ProductionOpenNWPNetcdfIterDataPipe(IterDataPipe):
             )
 
             if self.nwp_channels is not None:
-                logger.info(f"Selecting NWP channels: {self.nwp_channels}")
+                logger.info(f"Selecting NWP channels: {self.nwp_channels} "
+                            f"from {nwp.variables.values}")
                 nwp = nwp.sel(variable=self.nwp_channels)
 
             nwp = self._process_nwp_from_netcdf(nwp)
