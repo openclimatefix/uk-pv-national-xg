@@ -31,6 +31,7 @@ class ProductionOpenNWPNetcdfIterDataPipe(IterDataPipe):
     def __init__(
         self,
         s3_path_to_data: Path,
+        nwp_channels: Optional[list[str]] = None,
         s3_access_key: Optional[str] = None,
         s3_ssecret_key: Optional[str] = None,
     ) -> None:
@@ -38,6 +39,7 @@ class ProductionOpenNWPNetcdfIterDataPipe(IterDataPipe):
 
         Args:
             s3_path_to_data (Path): path to s3 file, does not require s3:// prefix
+            nwp_channel (Optional[list[str]], optional): Optional list of NWP channels to load. Defaults to None.
             s3_access_key (Optional[str], optional): Optional access key. Defaults to None.
             s3_ssecret_key (Optional[str], optional): Optional secret key. Defaults to None.
         """
@@ -46,6 +48,8 @@ class ProductionOpenNWPNetcdfIterDataPipe(IterDataPipe):
             self.fs = s3fs.S3FileSystem(key=s3_access_key, secret=s3_ssecret_key)
         else:
             self.fs = s3fs.S3FileSystem()
+
+        self.nwp_channels = nwp_channels
 
     def _process_nwp_from_netcdf(self, nwp: xr.Dataset) -> xr.Dataset:
         """Processes the NWP data in the same fashion as 'open_nwp' method
@@ -103,10 +107,9 @@ class ProductionOpenNWPNetcdfIterDataPipe(IterDataPipe):
                 # (see issue #456) but 'auto' massively slows down reading NWPs.
             )
 
-            # Only select 'dswrf' 'lcc' 'sde' 't' 'wdir10' in nwp.variables
-            # this helps reduce the memory usage
-            # TODO make this dynamic
-            nwp = nwp.sel(variable=["dswrf", "lcc", "sde", "t", "wdir10"])
+            if self.nwp_channels is not None:
+                logger.info(f"Selecting NWP channels: {self.nwp_channels}")
+                nwp = nwp.sel(variable=self.nwp_channels)
 
             nwp = self._process_nwp_from_netcdf(nwp)
             yield nwp
@@ -125,7 +128,8 @@ def xgnational_production(configuration_filename: Union[Path, str]) -> dict:
 
     configuration: Configuration = load_yaml_configuration(filename=configuration_filename)
 
-    nwp_datapipe = ProductionOpenNWPNetcdfIterDataPipe(configuration.input_data.nwp.nwp_zarr_path)
+    nwp_datapipe = ProductionOpenNWPNetcdfIterDataPipe(configuration.input_data.nwp.nwp_zarr_path,
+                                                       nwp_channels=configuration.input_data.nwp.nwp_channels)
     gsp_datapipe = OpenGSPFromDatabase(
         history_minutes=configuration.input_data.gsp.history_minutes,
         interpolate_minutes=configuration.input_data.gsp.live_interpolate_minutes,
