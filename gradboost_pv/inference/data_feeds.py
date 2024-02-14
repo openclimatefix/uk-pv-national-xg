@@ -39,7 +39,8 @@ class ProductionOpenNWPNetcdfIterDataPipe(IterDataPipe):
 
         Args:
             s3_path_to_data (Path): path to s3 file, does not require s3:// prefix
-            nwp_channel (Optional[list[str]], optional): Optional list of NWP channels to load. Defaults to None.
+            nwp_channels (Optional[list[str]], optional): Optional list of NWP channels to load.
+                Defaults to None.
             s3_access_key (Optional[str], optional): Optional access key. Defaults to None.
             s3_ssecret_key (Optional[str], optional): Optional secret key. Defaults to None.
         """
@@ -128,8 +129,10 @@ def xgnational_production(configuration_filename: Union[Path, str]) -> dict:
 
     configuration: Configuration = load_yaml_configuration(filename=configuration_filename)
 
-    nwp_datapipe = ProductionOpenNWPNetcdfIterDataPipe(configuration.input_data.nwp.nwp_zarr_path,
-                                                       nwp_channels=configuration.input_data.nwp.nwp_channels)
+    nwp_datapipe = ProductionOpenNWPNetcdfIterDataPipe(
+        configuration.input_data.nwp.nwp_zarr_path,
+        nwp_channels=configuration.input_data.nwp.nwp_channels,
+    )
     gsp_datapipe = OpenGSPFromDatabase(
         history_minutes=configuration.input_data.gsp.history_minutes,
         interpolate_minutes=configuration.input_data.gsp.live_interpolate_minutes,
