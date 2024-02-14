@@ -131,7 +131,8 @@ def xgnational_production(configuration_filename: Union[Path, str]) -> dict:
 
     nwp_datapipe = ProductionOpenNWPNetcdfIterDataPipe(
         configuration.input_data.nwp.nwp_zarr_path,
-        nwp_channels=configuration.input_data.nwp.nwp_channels,
+        nwp_channels=list(configuration.input_data.nwp.nwp_channels),
+
     )
     gsp_datapipe = OpenGSPFromDatabase(
         history_minutes=configuration.input_data.gsp.history_minutes,
