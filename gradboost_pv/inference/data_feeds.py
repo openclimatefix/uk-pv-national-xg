@@ -128,8 +128,10 @@ def xgnational_production(configuration_filename: Union[Path, str]) -> dict:
 
     configuration: Configuration = load_yaml_configuration(filename=configuration_filename)
 
-    nwp_datapipe = ProductionOpenNWPNetcdfIterDataPipe(configuration.input_data.nwp.nwp_zarr_path,
-                                                       nwp_channels=configuration.input_data.nwp.nwp_channels)
+    nwp_datapipe = ProductionOpenNWPNetcdfIterDataPipe(
+        configuration.input_data.nwp.nwp_zarr_path,
+        nwp_channels=configuration.input_data.nwp.nwp_channels,
+    )
     gsp_datapipe = OpenGSPFromDatabase(
         history_minutes=configuration.input_data.gsp.history_minutes,
         interpolate_minutes=configuration.input_data.gsp.live_interpolate_minutes,
