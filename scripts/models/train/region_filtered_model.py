@@ -78,7 +78,7 @@ def main(path_to_processed_nwp: Path, nwp_variables: list[str]) -> Dict[Hour, Ex
 
     results = dict()
 
-    for forecast_horizon_hour in range(37):
+    for forecast_horizon_hour in range(41):
         print(forecast_horizon_hour)
         # independently fit an XGBoost model for each forecast horizon
         processed_nwp = load_all_variable_slices(
@@ -91,7 +91,12 @@ def main(path_to_processed_nwp: Path, nwp_variables: list[str]) -> Dict[Hour, Ex
             processed_nwp, gsp_data, np.timedelta64(forecast_horizon_hour, "h")
         )
         training_results = run_experiment(
-            X, y, DEFFAULT_HYPARAM_CONFIG, forecast_hour=forecast_horizon_hour
+            X,
+            y,
+            DEFFAULT_HYPARAM_CONFIG,
+            forecast_hour=forecast_horizon_hour,
+            save_errors_locally=True,
+            errors_local_save_file=f"results/backtest_test_horizon_{forecast_horizon_hour}",
         )
 
         results[forecast_horizon_hour] = training_results
