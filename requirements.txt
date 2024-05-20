@@ -2,9 +2,9 @@ numpy
 pandas==1.5.3
 xarray
 xgboost
-ocf_datapipes==1.2.41
+ocf_datapipes==3.3.24
 nowcasting_datamodel==1.5.41
-pydantic==2.4.2
+pydantic==2.5.3
 pathy==0.10.3
 scikit-learn
 matplotlib
