@@ -12,7 +12,7 @@ geopandas
 pvlib
 shapely
 requests
-torchvision
+torchvision==0.17.2
 pytest
 flake8
 black
