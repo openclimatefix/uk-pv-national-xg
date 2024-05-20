@@ -3,7 +3,7 @@ pandas==1.5.3
 xarray
 xgboost
 ocf_datapipes==3.3.24
-torch==2.2.0
+torch==2.3.0
 nowcasting_datamodel==1.5.41
 pydantic==2.5.3
 pathy==0.10.3
@@ -13,7 +13,6 @@ geopandas
 pvlib
 shapely
 requests
-torchdata
 pytest
 flake8
 black
