@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import torch
 import xarray as xr
-from torch.utils.data import functional_datapipe, IterDataPipe
+from torch.utils.data import IterDataPipe, functional_datapipe
 
 from gradboost_pv.models.utils import DEFAULT_DIRECTORY_TO_PROCESSED_NWP, NWP_VARIABLE_NUM
 
