@@ -13,7 +13,7 @@ pvlib
 shapely
 requests
 torchvision==0.17.2
-torchdata
+torchdata==0.7.0
 pytest
 flake8
 black
