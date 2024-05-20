@@ -15,8 +15,7 @@ import xarray as xr
 from ocf_datapipes.config.load import load_yaml_configuration
 from ocf_datapipes.config.model import Configuration
 from ocf_datapipes.load import OpenGSPFromDatabase
-from torchdata.datapipes import functional_datapipe
-from torchdata.datapipes.iter import IterDataPipe
+from torch.utils.data import functional_datapipe, IterDataPipe
 
 from gradboost_pv.models.utils import load_nwp_coordinates
 
