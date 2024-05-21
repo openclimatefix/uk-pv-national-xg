@@ -10,10 +10,6 @@ RUN apt-get clean
 RUN apt-get update -y
 RUN apt-get install gcc g++ cmake libgeos-dev -y git -y pkg-config -y libhdf5-dev
 
-# Install XGBoost 2.0.0, which has quantile regression. Once this is released, these two lines should be removed
-RUN git clone --recursive https://github.com/dmlc/xgboost
-RUN cd xgboost && git checkout 603f8ce2fa71eecedadd837316dcac95ab7f4ff7 && mkdir build && cd build && cmake .. && make -j4 && cd .. && cd python-package && pip install .
-
 # copy files
 COPY setup.py app/setup.py
 COPY README.md app/README.md
