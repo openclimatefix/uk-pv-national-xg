@@ -13,11 +13,12 @@ input_data:
 
   #---------------------- NWP -------------------
   nwp:
-    nwp_channels:
-      - lcc
-      - dswrf
-      - t
-      - wdir10
-    nwp_zarr_path: !ENV ${NWP_ZARR_PATH}
-    history_minutes: 60
-    forecast_minutes: 480 # TODO - need 36 hours, not just 12
+    ukv:
+      nwp_channels:
+        - dswrf
+        - lcc
+        - t
+        - wdir10
+      nwp_zarr_path: !ENV ${NWP_ZARR_PATH}
+      history_minutes: 60
+      forecast_minutes: 480 # TODO - need 36 hours, not just 12
