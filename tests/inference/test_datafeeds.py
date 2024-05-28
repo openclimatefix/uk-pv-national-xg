@@ -12,7 +12,7 @@ def test_production_datafeed(sample_prod_nwp_data, sample_prod_gsp_data, model_c
 
 
 def test_production_load_config():
-    _ = load_yaml_configuration(filename='./configs/default_production_datafeed.yaml')
+    _ = load_yaml_configuration(filename="./configs/default_production_datafeed.yaml")
 
 
 @freeze_time("2021-05-25 12:15:00")
