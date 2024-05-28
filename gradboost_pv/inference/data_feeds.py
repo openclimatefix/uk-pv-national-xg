@@ -15,8 +15,7 @@ import xarray as xr
 from ocf_datapipes.config.load import load_yaml_configuration
 from ocf_datapipes.config.model import Configuration
 from ocf_datapipes.load import OpenGSPFromDatabase
-from torchdata.datapipes import functional_datapipe
-from torchdata.datapipes.iter import IterDataPipe
+from torch.utils.data import IterDataPipe, functional_datapipe
 
 from gradboost_pv.models.utils import load_nwp_coordinates
 
@@ -109,8 +108,9 @@ class ProductionOpenNWPNetcdfIterDataPipe(IterDataPipe):
             )
 
             if self.nwp_channels is not None:
-                logger.info(f"Selecting NWP channels: {self.nwp_channels} "
-                            f"from {nwp.variable.values}")
+                logger.info(
+                    f"Selecting NWP channels: {self.nwp_channels} " f"from {nwp.variable.values}"
+                )
                 nwp = nwp.sel(variable=self.nwp_channels)
 
             nwp = self._process_nwp_from_netcdf(nwp)
@@ -133,7 +133,6 @@ def xgnational_production(configuration_filename: Union[Path, str]) -> dict:
     nwp_datapipe = ProductionOpenNWPNetcdfIterDataPipe(
         configuration.input_data.nwp.nwp_zarr_path,
         nwp_channels=list(configuration.input_data.nwp.nwp_channels),
-
     )
     gsp_datapipe = OpenGSPFromDatabase(
         history_minutes=configuration.input_data.gsp.history_minutes,

@@ -4,8 +4,7 @@ from pathlib import Path
 from typing import Dict
 
 import pandas as pd
-from torchdata.datapipes import functional_datapipe
-from torchdata.datapipes.iter import IterDataPipe
+from torch.utils.data import IterDataPipe, functional_datapipe
 
 from gradboost_pv.inference.models import NationalBoostInferenceModel, Prediction
 from gradboost_pv.utils.logger import getLogger

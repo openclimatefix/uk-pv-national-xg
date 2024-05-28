@@ -4,8 +4,7 @@ from typing import Iterator
 import numpy as np
 import pytest
 import xarray as xr
-from torchdata.datapipes import functional_datapipe
-from torchdata.datapipes.iter import IterDataPipe
+from torch.utils.data import functional_datapipe, IterDataPipe
 from xgboost import XGBRegressor
 
 from gradboost_pv.inference.data_feeds import DataInput

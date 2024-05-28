@@ -21,7 +21,7 @@ PATH_TO_NWP_DATA_FOR_PROCESSING = PATH_TO_TEST_DATA_DIRECTORY / "nwp_single_obse
 @pytest.fixture(scope="session")
 def db_connection():
     """Database engine fixture."""
-    with PostgresContainer("postgres:14.5") as postgres:
+    with PostgresContainer("postgres:16") as postgres:
         # TODO need to setup postgres database with docker
         url = postgres.get_connection_url()
 
