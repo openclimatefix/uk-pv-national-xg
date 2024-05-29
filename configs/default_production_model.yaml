@@ -77,3 +77,4 @@ required_model_covariates:
 overwrite_read_datetime_at_inference: False # True will erase the 30-min rounding
 clip_near_zero_predictions: True
 clip_near_zero_value_percentage: 0.005
+gsp_installed_capacity_name: nominal_capacity_mwp
