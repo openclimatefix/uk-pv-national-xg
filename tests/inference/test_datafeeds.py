@@ -24,7 +24,6 @@ def test_production_load_config():
     )
 
 
-
 @freeze_time("2021-05-25 12:15:00")
 def test_production_get_inference_time(
     sample_prod_nwp_data, sample_prod_gsp_data, model_config_path
