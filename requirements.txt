@@ -21,3 +21,4 @@ s3fs
 testcontainers
 psutil
 ocf-ml-metrics
+sentry-sdk==2.13.0

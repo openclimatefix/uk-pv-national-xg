@@ -47,6 +47,15 @@ logging.getLogger("urllib3").setLevel(logging.INFO)
 logging.getLogger("fsspec").setLevel(logging.INFO)
 logging.getLogger("s3fs").setLevel(logging.INFO)
 
+sentry_sdk.init(
+    dsn=os.getenv("SENTRY_DSN"),
+    environment=os.getenv("ENVIRONMENT", "local"),
+    traces_sample_rate=1
+)
+
+sentry_sdk.set_tag("app_name", "uk_pv_national_xg")
+sentry_sdk.set_tag("version", gradboost_pv.__version__)
+
 
 @click.command()
 @click.option(
