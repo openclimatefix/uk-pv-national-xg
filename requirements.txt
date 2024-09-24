@@ -1,4 +1,4 @@
-numpy
+numpy<2.0.0
 pandas==1.5.3
 xarray
 xgboost
@@ -21,3 +21,4 @@ s3fs
 testcontainers
 psutil
 ocf-ml-metrics
+sentry-sdk==2.13.0
