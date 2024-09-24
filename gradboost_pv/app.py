@@ -4,6 +4,7 @@ import os
 import pathlib
 from pathlib import Path
 from typing import Optional
+import sentry_sdk
 
 import click
 from nowcasting_datamodel.connection import DatabaseConnection
