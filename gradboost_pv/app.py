@@ -4,9 +4,9 @@ import os
 import pathlib
 from pathlib import Path
 from typing import Optional
-import sentry_sdk
 
 import click
+import sentry_sdk
 from nowcasting_datamodel.connection import DatabaseConnection
 from xgboost import XGBRegressor
 
