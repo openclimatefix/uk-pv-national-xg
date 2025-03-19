@@ -3,14 +3,13 @@ import logging
 import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from importlib.resources import files
 from pathlib import Path
 from typing import Iterator, Optional, Union
 
 import numpy as np
 import pandas as pd
-import pyproj
 import psutil
+import pyproj
 import pytz
 import s3fs
 import xarray as xr
@@ -21,7 +20,6 @@ from torch.utils.data import IterDataPipe, functional_datapipe
 
 from gradboost_pv.models.utils import load_nwp_coordinates
 
-
 # OSGB is also called "OSGB 1936 / British National Grid -- United
 # Kingdom Ordnance Survey".  OSGB is used in many UK electricity
 # system maps, and is used by the UK Met Office UKV model.  OSGB is a
@@ -30,13 +28,15 @@ from gradboost_pv.models.utils import load_nwp_coordinates
 OSGB36 = 27700
 
 # This is the Lambert Azimuthal Equal Area projection used in the UKV data
-lambert_aea2 = {'proj': 'laea',
-          'lat_0':54.9,
-          'lon_0':-2.5,
-          'x_0':0.,
-          'y_0':0.,
-          'ellps': 'WGS84',
-          'datum': 'WGS84'}
+lambert_aea2 = {
+    "proj": "laea",
+    "lat_0": 54.9,
+    "lon_0": -2.5,
+    "x_0": 0.0,
+    "y_0": 0.0,
+    "ellps": "WGS84",
+    "datum": "WGS84",
+}
 
 laea = pyproj.Proj(**lambert_aea2)
 osgb = pyproj.Proj(f"+init=EPSG:{OSGB36}")
@@ -188,7 +188,7 @@ class ProductionOpenNWPNetcdfIterDataPipe(IterDataPipe):
 
                 # we just take 1-d versions of x_osgb and y_osgb, and reassign
                 nwp = nwp.assign_coords(x=x_osgb[0])
-                nwp = nwp.assign_coords(y=y_osgb[:,0])
+                nwp = nwp.assign_coords(y=y_osgb[:, 0])
 
             if self.nwp_channels is not None:
                 logger.info(
