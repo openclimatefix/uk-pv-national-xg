@@ -1,5 +1,6 @@
 numpy<2.0.0
 pandas==1.5.3
+zarr==2.18.4
 xarray
 xgboost
 ocf_datapipes==3.3.24
