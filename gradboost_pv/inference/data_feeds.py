@@ -34,12 +34,10 @@ lambert_aea2 = {
     "lon_0": -2.5,
     "x_0": 0.0,
     "y_0": 0.0,
-    "ellps": "WGS84",
-    "datum": "WGS84",
 }
 
 laea = pyproj.Proj(**lambert_aea2)
-osgb = pyproj.Proj(f"+init=EPSG:{OSGB36}")
+osgb = pyproj.Proj(f"EPSG:{OSGB36}")
 
 laea_to_osgb = pyproj.Transformer.from_proj(laea, osgb).transform
 
