@@ -2,6 +2,8 @@
 
 [![ease of contribution: hard](https://img.shields.io/badge/ease%20of%20contribution:%20hard-bb2629)](https://github.com/openclimatefix/ocf-meta-repo?tab=readme-ov-file#overview-of-ocfs-nowcasting-repositories)
 
+⚠️ Note this repo will soon be deprecated, and therefore we are not actively developing this code. 
+
 Repository hosting various models used to predict National PV in the UK using Numerical Weather Prediction (NWP) data in addition to historical PV values. Several model types for processing NWPs are considered including:
 
 - Single point downsampling
