@@ -1,2 +1,2 @@
 """Library for NationalBoost model"""
-__version__ = "1.0.42"
+__version__ = "1.0.43"
